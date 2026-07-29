@@ -1,10 +1,37 @@
-package main
+package poskad
 
 import (
 	"os"
 	"path/filepath"
 	"testing"
 )
+
+func TestConfigFromEnv(t *testing.T) {
+	t.Setenv("PORT", "3000")
+	t.Setenv("OUTPUT_DIR", "cards")
+	t.Setenv("OG2PNG_SCRIPT", "/tools/og2png.sh")
+	t.Setenv("WORK_DIR", "/workspace")
+
+	got := ConfigFromEnv()
+	want := Config{Port: "3000", OutputDir: "cards", OG2PNGScript: "/tools/og2png.sh", WorkDir: "/workspace"}
+	if got != want {
+		t.Fatalf("ConfigFromEnv() = %#v, want %#v", got, want)
+	}
+}
+
+func TestCommandFlagsOverrideEnvironment(t *testing.T) {
+	t.Setenv("PORT", "8080")
+	cmd := NewCommand()
+	if err := cmd.ParseFlags([]string{"--port", "3000", "--output-dir", "cards"}); err != nil {
+		t.Fatal(err)
+	}
+	if got, want := cmd.Flags().Lookup("port").Value.String(), "3000"; got != want {
+		t.Fatalf("port = %q, want %q", got, want)
+	}
+	if got, want := cmd.Flags().Lookup("output-dir").Value.String(), "cards"; got != want {
+		t.Fatalf("output-dir = %q, want %q", got, want)
+	}
+}
 
 func TestUUIDV7Shape(t *testing.T) {
 	id := uuidV7()

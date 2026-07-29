@@ -1,4 +1,4 @@
-package main
+package poskad
 
 import (
 	"bufio"
@@ -23,6 +23,18 @@ import (
 )
 
 const pageSize = 12
+
+// Config controls the HTTP service and generator paths.
+//
+// The zero-value fields are populated by ConfigFromEnv when using Run. The
+// command-line interface uses that function for its flag defaults, so explicit
+// flags always take precedence over environment variables.
+type Config struct {
+	Port         string
+	OutputDir    string
+	OG2PNGScript string
+	WorkDir      string
+}
 
 //go:embed web/templates/index.html web/static/htmx.min.js web/static/app.css web/static/app.js
 var embedded embed.FS
@@ -72,26 +84,43 @@ type jobView struct {
 	Item    *historyItem
 }
 
-func main() {
-	outputDir := envOr("OUTPUT_DIR", "output")
-	script := envOr("OG2PNG_SCRIPT", "./og2png.sh")
-	workDir := envOr("WORK_DIR", ".")
+// Run starts the HTTP service using environment-based configuration.
+func Run() error {
+	return RunWithConfig(ConfigFromEnv())
+}
+
+// ConfigFromEnv returns the service configuration from its supported
+// environment variables.
+func ConfigFromEnv() Config {
+	return Config{
+		Port:         envOr("PORT", "8080"),
+		OutputDir:    envOr("OUTPUT_DIR", "output"),
+		OG2PNGScript: envOr("OG2PNG_SCRIPT", "./og2png.sh"),
+		WorkDir:      envOr("WORK_DIR", "."),
+	}
+}
+
+// RunWithConfig starts the HTTP service with an explicit configuration.
+func RunWithConfig(config Config) error {
+	outputDir := config.OutputDir
+	script := config.OG2PNGScript
+	workDir := config.WorkDir
 
 	absOutput, err := filepath.Abs(outputDir)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	absWorkDir, err := filepath.Abs(workDir)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	if err := os.MkdirAll(absOutput, 0o755); err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	templates, err := template.ParseFS(embedded, "web/templates/index.html")
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	a := &app{
@@ -105,7 +134,7 @@ func main() {
 
 	static, err := fs.Sub(embedded, "web/static")
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	mux := http.NewServeMux()
 	mux.Handle("/static/", http.StripPrefix("/static/", cacheStatic(http.FileServer(http.FS(static)))))
@@ -116,9 +145,9 @@ func main() {
 	mux.HandleFunc("/items/", a.handleItem)
 	mux.HandleFunc("/media/", a.handleMedia)
 
-	addr := ":" + envOr("PORT", "8080")
+	addr := ":" + config.Port
 	log.Printf("og2png web listening on %s (output: %s)", addr, absOutput)
-	log.Fatal(http.ListenAndServe(addr, securityHeaders(mux)))
+	return http.ListenAndServe(addr, securityHeaders(mux))
 }
 
 func (a *app) handleIndex(w http.ResponseWriter, r *http.Request) {

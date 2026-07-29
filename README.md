@@ -13,17 +13,25 @@ output/<uuid-v7>/
 ## 本地运行
 
 ```bash
-go run .
+go run ./cmd/poskad
 ```
 
 打开 `http://localhost:8080`。服务依赖现有脚本需要的命令：`ogpk`、`typst`、`jq`、`curl`、`npx`、`magick` 与 Fontconfig。
 
-可选环境变量：
+可选环境变量（也都可由同名语义的命令行参数覆盖）：
 
 - `PORT`：监听端口，默认 `8080`
 - `OUTPUT_DIR`：历史图片目录，默认 `output`
 - `OG2PNG_SCRIPT`：生成脚本路径，默认 `./og2png.sh`
 - `WORK_DIR`：脚本工作目录，默认当前目录
+
+例如：
+
+```bash
+go run ./cmd/poskad --port 3000 --output-dir ./output --og2png-script ./og2png.sh --work-dir .
+```
+
+运行 `go run ./cmd/poskad --help` 可查看全部参数。命令行参数优先于环境变量，例如 `PORT=8080 go run ./cmd/poskad --port 3000` 会监听 `3000`。
 
 ## Railway
 

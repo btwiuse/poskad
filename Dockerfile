@@ -1,9 +1,10 @@
 FROM golang:1.26-bookworm AS build
 WORKDIR /src
-COPY go.mod main.go ./
+COPY go.mod go.sum app.go command.go ./
 COPY web ./web
+COPY cmd ./cmd
 RUN mkdir -p /out \
-    && CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags='-s -w' -o /out/og2png-web . \
+    && CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags='-s -w' -o /out/poskad ./cmd/poskad \
     && GOBIN=/out go install github.com/btwiuse/ogpk@latest
 
 FROM debian:bookworm-slim
@@ -15,7 +16,7 @@ RUN apt-get update \
        | tar -xJ --strip-components=1 -C /usr/local/bin "typst-x86_64-unknown-linux-musl/typst" \
     && apt-get purge -y --auto-remove xz-utils \
     && rm -rf /var/lib/apt/lists/*
-COPY --from=build /out/og2png-web /usr/local/bin/og2png-web
+COPY --from=build /out/poskad /usr/local/bin/poskad
 COPY --from=build /out/ogpk /usr/local/bin/ogpk
 COPY og2png.sh og-card.typ ./
 RUN chmod +x ./og2png.sh \
@@ -23,4 +24,4 @@ RUN chmod +x ./og2png.sh \
     && fc-cache -f
 ENV PORT=8080 OUTPUT_DIR=/app/output OG2PNG_SCRIPT=/app/og2png.sh WORK_DIR=/app
 EXPOSE 8080
-CMD ["og2png-web"]
+CMD ["poskad"]
