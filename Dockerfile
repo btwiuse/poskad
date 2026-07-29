@@ -4,7 +4,7 @@ COPY go.mod main.go ./
 COPY web ./web
 RUN mkdir -p /out \
     && CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags='-s -w' -o /out/og2png-web . \
-    && GOBIN=/out go install github.com/almonk/ogpk@latest
+    && GOBIN=/out go install github.com/btwiuse/ogpk@latest
 
 FROM debian:bookworm-slim
 ARG TYPST_VERSION=0.15.1
