@@ -86,6 +86,7 @@
         columns: (auto, 1fr),
         column-gutter: 10pt,
         inset: 0pt,
+        stroke: none,
         align: (left, horizon),
         if data.at("avatar", default: none) != none {
           render-avatar(data.avatar, colors.border, size: 40pt)
@@ -123,6 +124,7 @@
         columns: (1fr, auto),
         column-gutter: 16pt,
         inset: 0pt,
+        stroke: none,
         align: (left, bottom),
         table.cell(align: left + bottom)[
           #text(size: 9pt, fill: colors.text-dim, data.url)
