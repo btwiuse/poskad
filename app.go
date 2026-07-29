@@ -36,7 +36,7 @@ type Config struct {
 	WorkDir      string
 }
 
-//go:embed web/templates/index.html web/static/htmx.min.js web/static/app.css web/static/app.js
+//go:embed web/templates/index.html web/static
 var embedded embed.FS
 
 type app struct {
@@ -75,6 +75,7 @@ type historyPage struct {
 
 type indexData struct {
 	History historyPage
+	SiteURL string
 }
 
 type jobView struct {
@@ -155,7 +156,10 @@ func (a *app) handleIndex(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	a.renderTemplate(w, "index", indexData{History: a.historyPage("")})
+	a.renderTemplate(w, "index", indexData{
+		History: a.historyPage(""),
+		SiteURL: requestBaseURL(r),
+	})
 }
 
 func (a *app) handleHistory(w http.ResponseWriter, r *http.Request) {
@@ -455,6 +459,16 @@ func envOr(key, fallback string) string {
 		return value
 	}
 	return fallback
+}
+
+func requestBaseURL(r *http.Request) string {
+	scheme := "http"
+	if forwarded := strings.TrimSpace(strings.Split(r.Header.Get("X-Forwarded-Proto"), ",")[0]); forwarded != "" {
+		scheme = forwarded
+	} else if r.TLS != nil {
+		scheme = "https"
+	}
+	return scheme + "://" + r.Host
 }
 
 func securityHeaders(next http.Handler) http.Handler {

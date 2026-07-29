@@ -1,10 +1,20 @@
 package poskad
 
 import (
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"testing"
 )
+
+func TestRequestBaseURLUsesForwardedProtocol(t *testing.T) {
+	r := httptest.NewRequest("GET", "http://poskad.example/", nil)
+	r.Host = "poskad.example"
+	r.Header.Set("X-Forwarded-Proto", "https")
+	if got, want := requestBaseURL(r), "https://poskad.example"; got != want {
+		t.Fatalf("requestBaseURL() = %q, want %q", got, want)
+	}
+}
 
 func TestConfigFromEnv(t *testing.T) {
 	t.Setenv("PORT", "3000")
