@@ -44,7 +44,7 @@
 }
 
 #let verified-badge() = {
-  box(width: 15pt, height: 15pt, inset: 0pt)[
+  box(width: 15pt, height: 15pt, baseline: 12%, inset: 0pt)[
     #image("assets/verified.svg", width: 100%)
   ]
 }
@@ -79,7 +79,7 @@
         },
         [
           // X 使用 40px 头像、15px 名称/handle；在 2× PNG 中保持相同视觉比例。
-          #stack(dir: ttb, spacing: 3pt,
+          #stack(dir: ttb, spacing: 7pt,
             [
               #text(size: 15pt, weight: "bold", data.author)
               #if data.at("verified", default: false) { h(2pt); verified-badge() }
