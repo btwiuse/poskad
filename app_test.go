@@ -3,7 +3,10 @@ package poskad
 import (
 	"bytes"
 	"html/template"
+	"mime/multipart"
+	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -45,6 +48,60 @@ func TestConfigFromEnv(t *testing.T) {
 	want := Config{Port: "3000", OutputDir: "cards", OG2PNGScript: "/tools/og2png.sh", WorkDir: "/workspace"}
 	if got != want {
 		t.Fatalf("ConfigFromEnv() = %#v, want %#v", got, want)
+	}
+}
+
+func TestSharedSourceURL(t *testing.T) {
+	tests := []struct {
+		name   string
+		values url.Values
+		want   string
+	}{
+		{
+			name:   "explicit URL",
+			values: url.Values{"url": {"https://x.com/poskad/status/1"}},
+			want:   "https://x.com/poskad/status/1",
+		},
+		{
+			name:   "URL inside shared text",
+			values: url.Values{"text": {"Read this: https://x.com/poskad/status/2。"}},
+			want:   "https://x.com/poskad/status/2",
+		},
+		{
+			name:   "invalid link",
+			values: url.Values{"url": {"x.com/poskad/status/3"}},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if got := sharedSourceURL(test.values); got != test.want {
+				t.Fatalf("sharedSourceURL() = %q, want %q", got, test.want)
+			}
+		})
+	}
+}
+
+func TestShareTargetRedirectsToSharedURL(t *testing.T) {
+	var body bytes.Buffer
+	writer := multipart.NewWriter(&body)
+	if err := writer.WriteField("text", "A post: https://x.com/poskad/status/4"); err != nil {
+		t.Fatal(err)
+	}
+	if err := writer.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	a := &app{}
+	req := httptest.NewRequest(http.MethodPost, "/share", &body)
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+	response := httptest.NewRecorder()
+	a.handleShare(response, req)
+
+	if got, want := response.Code, http.StatusSeeOther; got != want {
+		t.Fatalf("status = %d, want %d", got, want)
+	}
+	if got, want := response.Header().Get("Location"), "/?share=https%3A%2F%2Fx.com%2Fposkad%2Fstatus%2F4"; got != want {
+		t.Fatalf("redirect = %q, want %q", got, want)
 	}
 }
 

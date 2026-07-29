@@ -40,7 +40,7 @@
         <form id="generator-form" hx-post="/generate" hx-target="#job-panel" hx-swap="outerHTML">
           <label for="url">原文链接</label>
           <div class="url-row">
-            <input id="url" name="url" type="url" placeholder="https://x.com/..." autocomplete="url" required>
+            <input id="url" name="url" type="url" placeholder="https://x.com/..." autocomplete="url" value="{{.ShareURL}}" {{if .ShareURL}}data-share-url="{{.ShareURL}}"{{end}} required>
             <button id="generate-button" type="submit">生成图片 <span aria-hidden="true">↗</span></button>
           </div>
         </form>

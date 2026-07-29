@@ -16,6 +16,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 	"sync"
@@ -23,6 +24,8 @@ import (
 )
 
 const pageSize = 12
+
+var sharedURLPattern = regexp.MustCompile(`https?://[^\s<>"']+`)
 
 // Config controls the HTTP service and generator paths.
 //
@@ -74,8 +77,9 @@ type historyPage struct {
 }
 
 type indexData struct {
-	History historyPage
-	SiteURL string
+	History  historyPage
+	SiteURL  string
+	ShareURL string
 }
 
 type jobView struct {
@@ -140,6 +144,7 @@ func RunWithConfig(config Config) error {
 	mux := http.NewServeMux()
 	mux.Handle("/static/", http.StripPrefix("/static/", cacheStatic(http.FileServer(http.FS(static)))))
 	mux.HandleFunc("/", a.handleIndex)
+	mux.HandleFunc("/share", a.handleShare)
 	mux.HandleFunc("/generate", a.handleGenerate)
 	mux.HandleFunc("/jobs/", a.handleJob)
 	mux.HandleFunc("/history", a.handleHistory)
@@ -157,9 +162,38 @@ func (a *app) handleIndex(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	a.renderTemplate(w, "index", indexData{
-		History: a.historyPage(""),
-		SiteURL: requestBaseURL(r),
+		History:  a.historyPage(""),
+		SiteURL:  requestBaseURL(r),
+		ShareURL: sharedSourceURL(r.URL.Query()),
 	})
+}
+
+// handleShare receives a Web Share Target request from an installed PWA.
+// Redirecting to the homepage keeps the resulting card in the normal UI while
+// preserving the shared link long enough for the browser to submit it.
+func (a *app) handleShare(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodGet {
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	if err := r.ParseMultipartForm(10 << 20); err != nil {
+		http.Error(w, "invalid share target request", http.StatusBadRequest)
+		return
+	}
+	sharedURL := sharedSourceURL(r.Form)
+	if !validSourceURL(sharedURL) {
+		http.Error(w, "share did not include a valid http:// or https:// link", http.StatusBadRequest)
+		return
+	}
+	redirect := url.URL{Path: "/"}
+	query := redirect.Query()
+	query.Set("share", sharedURL)
+	redirect.RawQuery = query.Encode()
+	http.Redirect(w, r, redirect.String(), http.StatusSeeOther)
 }
 
 func (a *app) handleHistory(w http.ResponseWriter, r *http.Request) {
@@ -422,6 +456,26 @@ func (j *job) snapshot() jobView {
 func validSourceURL(raw string) bool {
 	u, err := url.ParseRequestURI(raw)
 	return err == nil && (u.Scheme == "http" || u.Scheme == "https") && u.Host != ""
+}
+
+// sharedSourceURL accepts the explicit URL field first, then falls back to a
+// link embedded in the text or title fields used by the Web Share Target API.
+func sharedSourceURL(values url.Values) string {
+	for _, key := range []string{"url", "text", "title"} {
+		for _, value := range values[key] {
+			value = strings.TrimSpace(value)
+			if validSourceURL(value) {
+				return value
+			}
+			for _, candidate := range sharedURLPattern.FindAllString(value, -1) {
+				candidate = strings.TrimRight(candidate, ".,;:!?)]}。！？，；：")
+				if validSourceURL(candidate) {
+					return candidate
+				}
+			}
+		}
+	}
+	return ""
 }
 
 func uuidV7() string {

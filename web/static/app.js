@@ -51,6 +51,12 @@
     }
   });
 
+  // A Web Share Target redirects here with the received URL prefilled.
+  // Submit it through the same guarded htmx flow as a manually pasted link.
+  if (form.querySelector('[data-share-url]')) {
+    requestAnimationFrame(() => form.requestSubmit());
+  }
+
   document.body.addEventListener('htmx:beforeRequest', (event) => {
     if (event.detail.elt === form) {
       if (busy) {
