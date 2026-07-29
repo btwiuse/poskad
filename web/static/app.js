@@ -1,0 +1,230 @@
+(() => {
+  const form = document.querySelector('#generator-form');
+  const button = document.querySelector('#generate-button');
+  const toast = document.querySelector('#toast');
+  const modal = document.querySelector('#image-modal');
+  const modalImage = document.querySelector('#modal-image');
+  const download = document.querySelector('#modal-download');
+  const source = document.querySelector('#modal-source');
+  const previousButton = document.querySelector('[data-modal-prev]');
+  const nextButton = document.querySelector('[data-modal-next]');
+  const gallery = document.querySelector('#gallery');
+  let busy = false;
+  let toastTimer;
+  let currentOpener = null;
+  const uuidV7Pattern = /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+
+  function notify(message) {
+    clearTimeout(toastTimer);
+    toast.textContent = message;
+    if (typeof toast.showPopover === 'function') {
+      if (toast.matches(':popover-open')) toast.hidePopover();
+      toast.showPopover();
+    } else {
+      toast.classList.add('visible');
+    }
+    toastTimer = setTimeout(() => {
+      if (typeof toast.hidePopover === 'function' && toast.matches(':popover-open')) {
+        toast.hidePopover();
+      }
+      toast.classList.remove('visible');
+    }, 2600);
+  }
+
+  function setBusy(next) {
+    busy = next;
+    button.disabled = next;
+    button.innerHTML = next ? '正在生成…' : '生成图片 <span aria-hidden="true">↗</span>';
+  }
+
+  form.addEventListener('keydown', (event) => {
+    if (busy && event.key === 'Enter') {
+      event.preventDefault();
+      notify('图片仍在生成，请稍候。');
+    }
+  });
+
+  form.addEventListener('submit', (event) => {
+    if (busy) {
+      event.preventDefault();
+      notify('当前已有生成任务，请稍候。');
+    }
+  });
+
+  document.body.addEventListener('htmx:beforeRequest', (event) => {
+    if (event.detail.elt === form) {
+      if (busy) {
+        event.preventDefault();
+        notify('当前已有生成任务，请稍候。');
+        return;
+      }
+      setBusy(true);
+      notify('开始生成，日志会在下方持续更新。');
+    }
+  });
+
+  document.body.addEventListener('htmx:afterSwap', () => {
+    const panel = document.querySelector('#job-panel');
+    const status = panel?.dataset.jobStatus;
+    if (status === 'succeeded') {
+      setBusy(false);
+      notify('图片已生成，并已置顶到历史中。');
+      ensureHistoryCard(panel.dataset.itemId);
+    } else if (status === 'failed') {
+      setBusy(false);
+      notify('生成失败，请检查下方日志。');
+    }
+    scheduleMasonry();
+  });
+
+  document.body.addEventListener('htmx:oobAfterSwap', scheduleMasonry);
+  document.body.addEventListener('htmx:afterSettle', scheduleMasonry);
+  document.addEventListener('load', (event) => {
+    if (event.target.matches?.('#gallery img')) scheduleMasonry();
+  }, true);
+
+  document.addEventListener('click', async (event) => {
+    const opener = event.target.closest('[data-modal-open]');
+    if (opener) {
+      openModal(opener);
+      return;
+    }
+    if (event.target.closest('[data-modal-close]')) {
+      modal.close();
+      return;
+    }
+    if (event.target.closest('[data-modal-prev]')) {
+      navigateModal(-1);
+      return;
+    }
+    if (event.target.closest('[data-modal-next]')) {
+      navigateModal(1);
+      return;
+    }
+    if (event.target.closest('[data-copy-image]')) {
+      try {
+        const response = await fetch(modalImage.src);
+        const blob = await response.blob();
+        await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
+        notify('图片已复制到剪贴板。');
+      } catch (_) {
+        try {
+          await navigator.clipboard.writeText(modalImage.src);
+          notify('浏览器不支持复制图片，已复制图片链接。');
+        } catch (_) {
+          notify('浏览器未授予剪贴板权限，请使用下载按钮。');
+        }
+      }
+    }
+  });
+
+  function openModal(opener, syncHash = true) {
+    currentOpener = opener;
+    modalImage.src = opener.dataset.image;
+    download.href = opener.dataset.image;
+    source.href = opener.dataset.source;
+    if (syncHash && opener.dataset.id) {
+      history.replaceState(null, '', `${location.pathname}${location.search}#${opener.dataset.id}`);
+    }
+    updateModalNavigation();
+    if (!modal.open) modal.showModal();
+  }
+
+  function modalOpeners() {
+    return [...document.querySelectorAll('#gallery [data-modal-open]')];
+  }
+
+  function updateModalNavigation() {
+    const openers = modalOpeners();
+    const canNavigate = openers.length > 1 && openers.includes(currentOpener);
+    previousButton.disabled = !canNavigate;
+    nextButton.disabled = !canNavigate;
+  }
+
+  function navigateModal(direction) {
+    const openers = modalOpeners();
+    const index = openers.indexOf(currentOpener);
+    if (index < 0 || openers.length < 2) return;
+    openModal(openers[(index + direction + openers.length) % openers.length]);
+  }
+
+  document.addEventListener('keydown', (event) => {
+    if (!modal.open) return;
+    if (event.key === 'ArrowLeft') {
+      event.preventDefault();
+      navigateModal(-1);
+    } else if (event.key === 'ArrowRight') {
+      event.preventDefault();
+      navigateModal(1);
+    }
+  });
+
+  modal.addEventListener('click', (event) => {
+    if (event.target === modal) modal.close();
+  });
+
+  modal.addEventListener('close', () => {
+    currentOpener = null;
+    if (location.hash) history.replaceState(null, '', `${location.pathname}${location.search}`);
+  });
+
+  async function openFromHash() {
+    const id = location.hash.slice(1).toLowerCase();
+    if (!uuidV7Pattern.test(id)) return;
+    const opener = document.querySelector(`#gallery [data-id="${id}"]`);
+    if (opener) {
+      openModal(opener, false);
+      return;
+    }
+    try {
+      const response = await fetch(`/items/${id}`);
+      if (!response.ok) return;
+      const item = await response.json();
+      openModal({ dataset: { id: item.id, image: item.image_url, source: item.url } }, false);
+    } catch (_) {
+      notify('未找到该图片。');
+    }
+  }
+
+  window.addEventListener('hashchange', openFromHash);
+  openFromHash();
+
+  function layoutMasonry() {
+    if (!gallery) return;
+    const styles = getComputedStyle(gallery);
+    const row = parseFloat(styles.gridAutoRows) || 8;
+    const gap = parseFloat(styles.rowGap) || 16;
+    gallery.querySelectorAll('.card').forEach((card) => {
+      const span = Math.max(1, Math.ceil((card.getBoundingClientRect().height + gap) / (row + gap)));
+      card.style.gridRowEnd = `span ${span}`;
+    });
+  }
+
+  function scheduleMasonry() {
+    requestAnimationFrame(() => {
+      layoutMasonry();
+      requestAnimationFrame(layoutMasonry);
+    });
+  }
+
+  async function ensureHistoryCard(id) {
+    if (!id || document.getElementById(`card-${id}`)) return;
+    try {
+      const response = await fetch('/history');
+      if (!response.ok) return;
+      const fragment = document.createElement('template');
+      fragment.innerHTML = await response.text();
+      const card = fragment.content.querySelector(`#card-${id}`);
+      if (!card) return;
+      gallery.prepend(card);
+      scheduleMasonry();
+    } catch (_) {
+      // OOB 插入仍会正常工作；此处只是在它失败时提供兜底。
+    }
+  }
+
+  const resizeObserver = new ResizeObserver(() => requestAnimationFrame(layoutMasonry));
+  resizeObserver.observe(gallery);
+  window.addEventListener('load', scheduleMasonry);
+  window.addEventListener('resize', scheduleMasonry);
+})();

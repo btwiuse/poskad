@@ -51,8 +51,8 @@
  
 // 画布保持透明，只有圆角卡片本身着色，导出的 PNG 可直接叠加到任意背景。
 #set page(width: 600pt, height: auto, margin: 0pt, fill: none)
-// 使用 macOS 自带字体，避免 Fira/Noto 在未安装机器上的字体警告。
-#set text(font: ("Helvetica Neue", "Hiragino Sans GB", "STIX Two Math", "Apple Color Emoji"), fill: colors.text)
+// 字体由脚本根据当前运行环境选择，避免 macOS 与 Linux 容器的缺字警告。
+#set text(font: (data.font_sans, data.font_cjk, data.font_math, data.font_emoji), fill: colors.text)
  
 // ── 主内容 ───────────────────────────────────────────────────────────────────
  
@@ -84,6 +84,12 @@
           data.description
         )
       ]
+      #if data.at("post_image", default: none) != none {
+        v(14pt)
+        box(width: 100%, clip: true, radius: 10pt)[
+          #image(data.post_image, width: 100%)
+        ]
+      }
       #v(12pt)
       #line(length: 100%, stroke: 0.5pt + colors.border)
       #v(10pt)

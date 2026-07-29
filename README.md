@@ -1,0 +1,32 @@
+# og2png web
+
+一个免登录的 Go + HTMX 前端，用于调用现有的 `og2png.sh`。提交 URL 后，服务会显示实时日志并将成功结果保存为：
+
+```text
+output/<uuid-v7>/
+├── image.png
+└── src.url
+```
+
+首页只加载最新 12 张图片；滚动到末尾时由 HTMX 继续加载更早的记录。每个 URL 在生成期间按 SHA-256 键加锁，避免同一原文并发运行生成器。
+
+## 本地运行
+
+```bash
+go run .
+```
+
+打开 `http://localhost:8080`。服务依赖现有脚本需要的命令：`ogpk`、`typst`、`jq`、`curl`、`npx`、`magick` 与 Fontconfig。
+
+可选环境变量：
+
+- `PORT`：监听端口，默认 `8080`
+- `OUTPUT_DIR`：历史图片目录，默认 `output`
+- `OG2PNG_SCRIPT`：生成脚本路径，默认 `./og2png.sh`
+- `WORK_DIR`：脚本工作目录，默认当前目录
+
+## Railway
+
+仓库内的 `Dockerfile` 会构建嵌入 HTMX 静态资源的 Go 二进制，并在运行镜像中安装 Typst、ogpk、Node、ImageMagick 和所需字体。
+
+在 Railway 创建 Dockerfile 服务即可。若需要保留生成历史，请挂载持久化 Volume 到 `/app/output`；未挂载 Volume 时，重新部署会丢失历史图片。

@@ -7,7 +7,7 @@ WORK_DIR=$(mktemp -d)
 trap 'rm -rf "$WORK_DIR"' EXIT
  
 # ── 依赖检查 ──────────────────────────────────────────────────────────────────
-for cmd in ogpk typst jq curl npx magick fc-match; do
+for cmd in ogpk typst jq curl npx magick fc-match fc-list; do
   if ! command -v "$cmd" &>/dev/null; then
     echo "error: $cmd not found in PATH" >&2
     exit 1
@@ -28,6 +28,8 @@ title=$(echo "$META" | jq -r '.["og:title"] // empty')
 desc=$(echo "$META" | jq -r '.["og:description"] // empty')
 site_name=$(echo "$META" | jq -r '.["og:site_name"] // empty')
 image_url=$(echo "$META" | jq -r '.["og:image:secure_url"] // .["og:image"] // empty')
+image_width=$(echo "$META" | jq -r '.["og:image:width"] // empty')
+image_height=$(echo "$META" | jq -r '.["og:image:height"] // empty')
 og_url=$(echo "$META" | jq -r '.["og:url"] // empty')
 if [ -z "$og_url" ] || [ "$og_url" = "null" ]; then
   og_url="$URL"
@@ -78,18 +80,54 @@ if [[ "$title" =~ ^(.*)[[:space:]]\(@([^\)]+)\)[[:space:]]on[[:space:]]X$ ]]; th
   handle="@${BASH_REMATCH[2]}"
 fi
 
+# 根据运行环境选择已安装字体：本机使用 macOS 字体，容器使用 Noto。
+has_font() {
+  # 不使用 grep -q：set -o pipefail 下它会提前关闭管道并让 fc-list 收到 SIGPIPE。
+  fc-list --format='%{family}\n' | tr ',' '\n' | grep -Fx "$1" >/dev/null
+}
+if has_font "Helvetica Neue"; then
+  font_sans="Helvetica Neue"
+  font_cjk="Hiragino Sans GB"
+  font_emoji="Apple Color Emoji"
+else
+  font_sans="Noto Sans CJK SC"
+  font_cjk="Noto Sans CJK SC"
+  font_emoji="Noto Color Emoji"
+fi
+font_math="STIX Two Math"
+
 # ── 3. 准备模板资源 ──────────────────────────────────────────────────────────
 mkdir -p "$WORK_DIR/assets"
 
-# ── 4. 下载头像 ──────────────────────────────────────────────────────────────
+# ── 4. 下载头像与帖子配图 ────────────────────────────────────────────────────
+# X 对无图帖子通常把 400×400 的 profile image 放在 og:image。若尺寸并非
+# 400×400 且 URL 也不是常见的 200x200 头像，则把它视为帖子配图，头像改由
+# unavatar 根据从 og:title 拆出的 @用户名获取。
 avatar_path="null"
+post_image_path="null"
 if [ -n "$image_url" ] && [ "$image_url" != "null" ]; then
-  echo "→ 下载头像: $image_url"
-  # 尝试下载，忽略失败
-  if curl -sfL --max-time 10 -o "$WORK_DIR/avatar.jpg" "$image_url"; then
-    avatar_path='"assets/avatar.jpg"'
+  if [[ -n "$handle" && ( "$image_width" != "400" || "$image_height" != "400" ) && "$image_url" != *_200x200.jpg ]]; then
+    avatar_url="https://unavatar.io/x/${handle#@}"
+    echo "→ 下载头像: $avatar_url"
+    if curl -sfL --max-time 15 -o "$WORK_DIR/avatar.jpg" "$avatar_url"; then
+      avatar_path='"assets/avatar.jpg"'
+    else
+      echo "  ⚠ unavatar 头像下载失败，跳过"
+    fi
+
+    echo "→ 下载帖子配图: $image_url"
+    if curl -sfL --max-time 20 -o "$WORK_DIR/post-image.jpg" "$image_url"; then
+      post_image_path='"assets/post-image.jpg"'
+    else
+      echo "  ⚠ 帖子配图下载失败，跳过"
+    fi
   else
-    echo "  ⚠ 头像下载失败，跳过"
+    echo "→ 下载头像: $image_url"
+    if curl -sfL --max-time 10 -o "$WORK_DIR/avatar.jpg" "$image_url"; then
+      avatar_path='"assets/avatar.jpg"'
+    else
+      echo "  ⚠ 头像下载失败，跳过"
+    fi
   fi
 fi
 
@@ -123,6 +161,9 @@ cp "$TEMPLATE_DIR/og-card.typ" "$WORK_DIR/"
 if [ "$avatar_path" != "null" ]; then
   cp "$WORK_DIR/avatar.jpg" "$WORK_DIR/assets/avatar.jpg"
 fi
+if [ "$post_image_path" != "null" ]; then
+  cp "$WORK_DIR/post-image.jpg" "$WORK_DIR/assets/post-image.jpg"
+fi
  
 # ── 7. 构建 JSON 数据 ────────────────────────────────────────────────────────
 DATA=$(jq -n \
@@ -132,7 +173,12 @@ DATA=$(jq -n \
   --arg description "$desc" \
   --arg site_name "$site_name" \
   --arg url "$og_url" \
+  --arg font_sans "$font_sans" \
+  --arg font_cjk "$font_cjk" \
+  --arg font_math "$font_math" \
+  --arg font_emoji "$font_emoji" \
   --argjson avatar "$avatar_path" \
+  --argjson post_image "$post_image_path" \
   '{
     title: $title,
     author: $author,
@@ -140,7 +186,12 @@ DATA=$(jq -n \
     description: $description,
     site_name: $site_name,
     url: $url,
-    avatar: $avatar
+    font_sans: $font_sans,
+    font_cjk: $font_cjk,
+    font_math: $font_math,
+    font_emoji: $font_emoji,
+    avatar: $avatar,
+    post_image: $post_image
   }'
 )
  

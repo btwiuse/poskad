@@ -1,0 +1,98 @@
+{{define "index"}}
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="将网页和 X 原文生成可分享的 OG 图片卡片">
+    <title>og2png</title>
+    <link rel="stylesheet" href="/static/app.css">
+    <script src="/static/htmx.min.js" defer></script>
+    <script src="/static/app.js" defer></script>
+  </head>
+  <body>
+    <main class="shell">
+      <header class="hero">
+        <p class="eyebrow">OG CARD MAKER</p>
+        <h1>把链接做成<br>可分享的卡片。</h1>
+        <p>粘贴 X 原文或任何含 Open Graph 数据的链接。无需登录。</p>
+      </header>
+
+      <section class="composer" aria-label="生成图片">
+        <form id="generator-form" hx-post="/generate" hx-target="#job-panel" hx-swap="outerHTML">
+          <label for="url">原文链接</label>
+          <div class="url-row">
+            <input id="url" name="url" type="url" placeholder="https://x.com/..." autocomplete="url" required>
+            <button id="generate-button" type="submit">生成图片 <span aria-hidden="true">↗</span></button>
+          </div>
+        </form>
+        <p class="hint">图片与原始链接会公开保存在生成历史中。</p>
+      </section>
+
+      <section id="job-panel" class="job-panel" aria-live="polite"></section>
+
+      <section class="history-section" aria-labelledby="history-title">
+        <div class="history-heading">
+          <h2 id="history-title">生成历史</h2>
+          <span>最新在前</span>
+        </div>
+        <div id="gallery" class="gallery">
+          {{template "history" .History}}
+        </div>
+      </section>
+    </main>
+    <dialog id="image-modal" class="image-modal" aria-label="图片预览">
+      <div class="modal-layout">
+        <div class="modal-toolbar">
+          <button type="button" class="modal-action" data-copy-image><span aria-hidden="true">⧉</span> 复制图片</button>
+          <a id="modal-download" class="modal-action" download><span aria-hidden="true">↓</span> 下载 PNG</a>
+          <a id="modal-source" class="modal-action" target="_blank" rel="noreferrer"><span aria-hidden="true">↗</span> 打开原文</a>
+          <button class="modal-close" type="button" aria-label="关闭预览" data-modal-close>×</button>
+        </div>
+        <div class="modal-image-wrap"><img id="modal-image" alt="生成的 OG 卡片预览"></div>
+      </div>
+      <button class="modal-nav prev" type="button" aria-label="上一张图片" data-modal-prev>‹</button>
+      <button class="modal-nav next" type="button" aria-label="下一张图片" data-modal-next>›</button>
+    </dialog>
+    <div id="toast" class="toast" popover="manual" role="status" aria-live="polite"></div>
+  </body>
+</html>
+{{end}}
+
+{{define "history"}}
+  {{range .Items}}{{template "card" .}}{{end}}
+  {{if .Next}}
+  <div class="history-sentinel" hx-get="/history?before={{.Next}}" hx-trigger="intersect once" hx-swap="outerHTML">
+    正在加载更多图片…
+  </div>
+  {{end}}
+{{end}}
+
+{{define "card"}}
+<article class="card" id="card-{{.ID}}">
+  <button type="button" class="image-link" data-modal-open data-id="{{.ID}}" data-image="{{.ImageURL}}" data-source="{{.URL}}" aria-label="预览生成图片">
+    <img src="{{.ImageURL}}" alt="由 {{.URL}} 生成的 OG 卡片" loading="lazy">
+  </button>
+</article>
+{{end}}
+
+{{define "card-oob"}}
+<article class="card" id="card-{{.ID}}" hx-swap-oob="afterbegin:#gallery">
+  <button type="button" class="image-link" data-modal-open data-id="{{.ID}}" data-image="{{.ImageURL}}" data-source="{{.URL}}" aria-label="预览生成图片">
+    <img src="{{.ImageURL}}" alt="由 {{.URL}} 生成的 OG 卡片" loading="lazy">
+  </button>
+</article>
+{{end}}
+
+{{define "job"}}
+<section id="job-panel" class="job-panel {{.Status}}" data-job-status="{{.Status}}" {{with .Item}}data-item-id="{{.ID}}"{{end}} {{if or (eq .Status "queued") (eq .Status "running")}}hx-get="/jobs/{{.ID}}" hx-trigger="every 750ms" hx-swap="outerHTML"{{end}}>
+  <div class="job-heading">
+    <span>{{if eq .Status "queued"}}排队中{{else if eq .Status "running"}}正在生成{{else if eq .Status "succeeded"}}生成完成{{else}}生成失败{{end}}</span>
+    {{if or (eq .Status "queued") (eq .Status "running")}}<span class="spinner" aria-label="处理中"></span>{{end}}
+  </div>
+  <pre>{{.LogText}}</pre>
+  {{if eq .Status "succeeded"}}
+    {{with .Item}}<button type="button" class="job-result" data-modal-open data-id="{{.ID}}" data-image="{{.ImageURL}}" data-source="{{.URL}}"><img src="{{.ImageURL}}" alt="新生成的 OG 卡片">点击预览与下载</button>{{end}}
+  {{end}}
+</section>
+{{end}}
