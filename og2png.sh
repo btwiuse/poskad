@@ -15,7 +15,52 @@ for cmd in ogpk typst jq curl npx magick fc-match fc-list; do
 done
  
 # ── 参数 ──────────────────────────────────────────────────────────────────────
-URL="${1:?用法: $0 <url> [output.png]}"
+usage() {
+  cat <<EOF
+用法: $0 [--theme dark|light] <url> [output.png]
+
+选项:
+  --theme THEME  卡片主题：dark（默认）或 light
+EOF
+}
+
+THEME="dark"
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --theme)
+      if [[ $# -lt 2 ]]; then
+        echo "error: --theme requires dark or light" >&2
+        exit 1
+      fi
+      THEME="${2:-}"
+      shift 2
+      ;;
+    --theme=*)
+      THEME="${1#*=}"
+      shift
+      ;;
+    --help|-h)
+      usage
+      exit 0
+      ;;
+    --)
+      shift
+      break
+      ;;
+    -*)
+      echo "error: unknown option: $1" >&2
+      usage >&2
+      exit 1
+      ;;
+    *) break ;;
+  esac
+done
+
+if [[ "$THEME" != "dark" && "$THEME" != "light" ]]; then
+  echo "error: --theme must be dark or light" >&2
+  exit 1
+fi
+URL="${1:?用法: $0 [--theme dark|light] <url> [output.png]}"
 OUTPUT="${2:-output/og-card.png}"
 mkdir -p "$(dirname "$OUTPUT")"
  
@@ -200,6 +245,7 @@ DATA=$(jq -n \
   --arg font_cjk "$font_cjk" \
   --arg font_math "$font_math" \
   --arg font_emoji "$font_emoji" \
+  --arg theme "$THEME" \
   --argjson verified "$verified" \
   --argjson avatar "$avatar_path" \
   --argjson post_image "$post_image_path" \
@@ -214,6 +260,7 @@ DATA=$(jq -n \
     font_cjk: $font_cjk,
     font_math: $font_math,
     font_emoji: $font_emoji,
+    theme: $theme,
     verified: $verified,
     avatar: $avatar,
     post_image: $post_image

@@ -18,6 +18,16 @@ go run ./cmd/poskad
 
 打开 `http://localhost:8080`。服务依赖现有脚本需要的命令：`ogpk`、`typst`、`jq`、`curl`、`npx`、`magick` 与 Fontconfig。
 
+## 卡片主题
+
+`og2png.sh` 使用单一模板，并可通过 `--theme` 选择调色板；默认值是 `dark`：
+
+```bash
+./og2png.sh --theme light https://x.com/example/status/123 output/card.png
+```
+
+该参数暂未暴露在网页界面中，网页生成继续使用默认的深色主题。
+
 可选环境变量（也都可由同名语义的命令行参数覆盖）：
 
 - `PORT`：监听端口，默认 `8080`

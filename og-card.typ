@@ -5,12 +5,22 @@
  
 // ── 配色 ──────────────────────────────────────────────────────────────────────
  
-#let colors = (
+#let dark-colors = (
   bg: rgb("#000000"),
   card: rgb("#000000"),
   text: rgb("#f7f9f9"),
   text-dim: rgb("#8b98a5"),
   border: rgb("#2f3336"),
+  blue: rgb("#1d9bf0"),
+  qr-bg: rgb("#ffffff"),
+)
+
+#let light-colors = (
+  bg: rgb("#ffffff"),
+  card: rgb("#ffffff"),
+  text: rgb("#0f1419"),
+  text-dim: rgb("#536471"),
+  border: rgb("#cfd9de"),
   blue: rgb("#1d9bf0"),
   qr-bg: rgb("#ffffff"),
 )
@@ -35,10 +45,10 @@
  
 // ── 圆形头像 ─────────────────────────────────────────────────────────────────
  
-#let render-avatar(path, size: 48pt) = {
+#let render-avatar(path, border, size: 48pt) = {
   box(
-    clip: true, fill: colors.border,
-    stroke: 0.75pt + colors.border, radius: 50%, inset: 1pt,
+    clip: true, fill: border,
+    stroke: 0.75pt + border, radius: 50%, inset: 1pt,
     box(clip: true, radius: 50%, image(path, width: size))
   )
 }
@@ -52,6 +62,11 @@
 // ── 数据加载 ─────────────────────────────────────────────────────────────────
  
 #let data = json(bytes(sys.inputs.data))
+#let colors = if data.at("theme", default: "dark") == "light" {
+  light-colors
+} else {
+  dark-colors
+}
  
 // ── 页面设置 ─────────────────────────────────────────────────────────────────
  
@@ -73,7 +88,7 @@
         inset: 0pt,
         align: (left, horizon),
         if data.at("avatar", default: none) != none {
-          render-avatar(data.avatar, size: 40pt)
+          render-avatar(data.avatar, colors.border, size: 40pt)
         } else {
           circle(radius: 20pt, fill: colors.border)
         },
