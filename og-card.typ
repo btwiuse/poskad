@@ -127,9 +127,17 @@
         column-gutter: 16pt,
         inset: 0pt,
         stroke: none,
-        align: (left, bottom),
-        table.cell(align: left + bottom)[
-          #text(size: 9pt, fill: colors.text-dim, data.url)
+        align: (left, top),
+        table.cell(align: left + top)[
+          // Keep both labels aligned to the QR image, not its padded white shell.
+          #box(width: 100%, height: 90pt)[
+            #place(top + left, dy: 6pt)[
+              #text(size: 11pt, fill: colors.text-dim, "Scan the QR code for the original post")
+            ]
+            #place(bottom + left, dy: -6pt)[
+              #text(size: 9pt, fill: colors.text-dim, data.url)
+            ]
+          ]
         ],
         [
           #align(right)[
