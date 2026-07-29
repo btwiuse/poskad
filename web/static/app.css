@@ -41,7 +41,7 @@ button:disabled { background: #3d3d43; color: #9b9ba1; cursor: not-allowed; filt
 .history-heading { align-items: baseline; display: flex; justify-content: space-between; margin-bottom: 16px; }
 h2 { font-size: 1.2rem; letter-spacing: -.02em; margin: 0; }
 .history-heading span { color: var(--muted); font-size: .8rem; }
-.gallery { --masonry-gap: 16px; --masonry-row: 8px; align-items: start; display: grid; gap: var(--masonry-gap); grid-auto-flow: row; grid-auto-rows: var(--masonry-row); grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+.gallery { --masonry-gap: 16px; --masonry-row: 8px; align-items: start; display: grid; gap: var(--masonry-gap); grid-auto-flow: row dense; grid-auto-rows: var(--masonry-row); grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: 13px; margin: 0; overflow: hidden; width: 100%; }
 .image-link { background: #000; border-radius: 0; display: block; line-height: 0; padding: 0; width: 100%; }
 .image-link img { height: auto; transition: transform 180ms ease; width: 100%; }

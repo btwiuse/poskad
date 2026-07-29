@@ -193,7 +193,15 @@
     const styles = getComputedStyle(gallery);
     const row = parseFloat(styles.gridAutoRows) || 8;
     const gap = parseFloat(styles.rowGap) || 16;
-    gallery.querySelectorAll('.card').forEach((card) => {
+    const cards = [...gallery.querySelectorAll('.card')];
+
+    // OOB 插入会改变 DOM 顺序。先清除旧跨度，确保 Grid 按新顺序从左上重新放置。
+    cards.forEach((card) => {
+      card.style.gridRowEnd = '';
+    });
+    void gallery.offsetHeight;
+
+    cards.forEach((card) => {
       const span = Math.max(1, Math.ceil((card.getBoundingClientRect().height + gap) / (row + gap)));
       card.style.gridRowEnd = `span ${span}`;
     });
