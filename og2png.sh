@@ -103,30 +103,38 @@ mkdir -p "$WORK_DIR/assets"
 # X 对无图帖子通常把 400×400 的 profile image 放在 og:image。若尺寸并非
 # 400×400 且 URL 也不是常见的 200x200 头像，则把它视为帖子配图，头像改由
 # unavatar 根据从 og:title 拆出的 @用户名获取。
+download_as_png() {
+  local label="$1"
+  local url="$2"
+  local name="$3"
+  local timeout="$4"
+  local download="$WORK_DIR/assets/${name}.download"
+  local output="$WORK_DIR/assets/${name}.png"
+
+  echo "→ 下载${label}: $url"
+  if curl -sfL --max-time "$timeout" -o "$download" "$url" \
+    && magick "${download}[0]" "$output"; then
+    return 0
+  fi
+  echo "  ⚠ ${label}下载或转换失败，跳过"
+  return 1
+}
+
 avatar_path="null"
 post_image_path="null"
 if [ -n "$image_url" ] && [ "$image_url" != "null" ]; then
   if [[ -n "$handle" && ( "$image_width" != "400" || "$image_height" != "400" ) && "$image_url" != *_200x200.jpg ]]; then
     avatar_url="https://unavatar.io/x/${handle#@}"
-    echo "→ 下载头像: $avatar_url"
-    if curl -sfL --max-time 15 -o "$WORK_DIR/avatar.jpg" "$avatar_url"; then
-      avatar_path='"assets/avatar.jpg"'
-    else
-      echo "  ⚠ unavatar 头像下载失败，跳过"
+    if download_as_png "头像" "$avatar_url" "avatar" 15; then
+      avatar_path='"assets/avatar.png"'
     fi
 
-    echo "→ 下载帖子配图: $image_url"
-    if curl -sfL --max-time 20 -o "$WORK_DIR/post-image.jpg" "$image_url"; then
-      post_image_path='"assets/post-image.jpg"'
-    else
-      echo "  ⚠ 帖子配图下载失败，跳过"
+    if download_as_png "帖子配图" "$image_url" "post-image" 20; then
+      post_image_path='"assets/post-image.png"'
     fi
   else
-    echo "→ 下载头像: $image_url"
-    if curl -sfL --max-time 10 -o "$WORK_DIR/avatar.jpg" "$image_url"; then
-      avatar_path='"assets/avatar.jpg"'
-    else
-      echo "  ⚠ 头像下载失败，跳过"
+    if download_as_png "头像" "$image_url" "avatar" 10; then
+      avatar_path='"assets/avatar.png"'
     fi
   fi
 fi
@@ -156,14 +164,6 @@ magick "$WORK_DIR/assets/post-qr.png" "$WORK_DIR/assets/x-logo.png" \
 
 # ── 6. 准备 Typst 模板 ───────────────────────────────────────────────────────
 cp "$TEMPLATE_DIR/og-card.typ" "$WORK_DIR/"
- 
-# 如果头像下载成功，复制到 assets 目录
-if [ "$avatar_path" != "null" ]; then
-  cp "$WORK_DIR/avatar.jpg" "$WORK_DIR/assets/avatar.jpg"
-fi
-if [ "$post_image_path" != "null" ]; then
-  cp "$WORK_DIR/post-image.jpg" "$WORK_DIR/assets/post-image.jpg"
-fi
  
 # ── 7. 构建 JSON 数据 ────────────────────────────────────────────────────────
 DATA=$(jq -n \
