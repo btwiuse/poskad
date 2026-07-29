@@ -1,20 +1,18 @@
 // =============================================================================
-// OG LINK CARD TEMPLATE
+// X POST LINK CARD TEMPLATE
 // =============================================================================
 // 用法: typst compile --input data='<json>' og-card.typ output.png
  
 // ── 配色 ──────────────────────────────────────────────────────────────────────
  
 #let colors = (
-  bg: oklch(15%, 0.02, 260deg),
-  card-bg: oklch(22%, 0.02, 260deg),
-  accent: oklch(65%, 0.15, 260deg),
-  text: oklch(92%, 0.01, 260deg),
-  text-dim: oklch(65%, 0.02, 260deg),
-  avatar-border: oklch(40%, 0.05, 260deg),
-  border: oklch(35%, 0.03, 260deg),
-  site-badge-bg: oklch(30%, 0.04, 260deg),
-  site-badge-text: oklch(78%, 0.04, 260deg),
+  bg: rgb("#000000"),
+  card: rgb("#000000"),
+  text: rgb("#f7f9f9"),
+  text-dim: rgb("#8b98a5"),
+  border: rgb("#2f3336"),
+  blue: rgb("#1d9bf0"),
+  qr-bg: rgb("#ffffff"),
 )
  
 // ── 文本截断 ──────────────────────────────────────────────────────────────────
@@ -39,8 +37,8 @@
  
 #let render-avatar(path, size: 48pt) = {
   box(
-    clip: true, fill: colors.avatar-border,
-    stroke: 1.5pt + colors.accent, radius: 50%, inset: 2pt,
+    clip: true, fill: colors.border,
+    stroke: 0.75pt + colors.border, radius: 50%, inset: 1pt,
     box(clip: true, radius: 50%, image(path, width: size))
   )
 }
@@ -51,87 +49,61 @@
  
 // ── 页面设置 ─────────────────────────────────────────────────────────────────
  
-#set page(width: 600pt, height: 315pt, margin: 0pt, fill: colors.bg)
-#set text(font: ("Fira Sans", "Noto Color Emoji", "Noto Sans CJK SC"), fill: colors.text)
- 
-// 底部渐变装饰线
-#place(bottom,
-  rect(width: 100%, height: 3pt, fill: colors.accent)
-)
+// 画布保持透明，只有圆角卡片本身着色，导出的 PNG 可直接叠加到任意背景。
+#set page(width: 600pt, height: auto, margin: 0pt, fill: none)
+// 使用 macOS 自带字体，避免 Fira/Noto 在未安装机器上的字体警告。
+#set text(font: ("Helvetica Neue", "Hiragino Sans GB", "STIX Two Math", "Apple Color Emoji"), fill: colors.text)
  
 // ── 主内容 ───────────────────────────────────────────────────────────────────
  
-#block(
-  width: 100%, height: 100%,
-  inset: 30pt,
-  clip: true,
- 
-  // ── 上半部分：头像 + 标题 ──
-  {
-    // 头像 + 标题并排
-    if data.at("avatar", default: none) != none {
-      table(
+#block(width: 100%, inset: 20pt)[
+  #rect(width: 100%, radius: 16pt, stroke: 0.75pt + colors.border, fill: colors.card)[
+    #block(width: 100%, inset: 18pt)[
+      // 𝕏 独立置于帖首；二维码则与原链接一起置于正文分隔线下方。
+      #place(top + right)[
+        #text(size: 24pt, weight: "bold", fill: colors.text, "𝕏")
+      ]
+      #table(
         columns: (auto, 1fr),
-        column-gutter: 12pt,
-        align: (left, left),
-        render-avatar(data.avatar, size: 52pt),
+        column-gutter: 11pt,
+        align: (left, horizon),
+        if data.at("avatar", default: none) != none {
+          render-avatar(data.avatar, size: 44pt)
+        } else {
+          circle(diameter: 44pt, fill: colors.border)
+        },
         [
-          #block(
-            text(size: 22pt, weight: "bold", fill: colors.text,
-              truncate(data.title, max-lines: 1)
-            )
-          )
-          #if data.at("site_name", default: none) != none {
-            v(4pt)
-            box(
-              fill: colors.site-badge-bg, radius: 0.2em,
-              inset: (x: 0.6em, y: 0.2em),
-              text(size: 9pt, weight: "medium", fill: colors.site-badge-text,
-                upper(data.site_name)
-              )
-            )
-          }
-        ]
+          // 显示名完整保留；卡片高度会随内容扩展，绝不以省略号截断。
+          #text(size: 14.5pt, weight: "bold", data.author)
+          #if data.handle != "" { v(1pt); text(size: 11pt, fill: colors.text-dim, data.handle) }
+        ],
       )
-    } else {
-      // 无头像时仅显示标题
-      block(
-        text(size: 22pt, weight: "bold", fill: colors.text,
-          truncate(data.title, max-lines: 1)
+      #v(8pt)
+      #block(width: 100%)[
+        #text(size: 20pt, weight: "regular",
+          data.description
         )
+      ]
+      #v(12pt)
+      #line(length: 100%, stroke: 0.5pt + colors.border)
+      #v(10pt)
+      // 页脚在 HR 下方正常流式排版：正文再长也不会与二维码重叠。
+      #table(
+        columns: (1fr, auto),
+        column-gutter: 16pt,
+        inset: 0pt,
+        align: (left, bottom),
+        table.cell(align: left + bottom)[
+          #text(size: 9pt, fill: colors.text-dim, data.url)
+        ],
+        [
+          #align(right)[
+            #box(fill: colors.qr-bg, radius: 7pt, inset: 6pt)[
+              #image("assets/post-qr-logo.png", width: 78pt)
+            ]
+          ]
+        ],
       )
-      // site badge
-      if data.at("site_name", default: none) != none {
-        v(4pt)
-        box(
-          fill: colors.site-badge-bg, radius: 0.2em,
-          inset: (x: 0.6em, y: 0.2em),
-          text(size: 9pt, weight: "medium", fill: colors.site-badge-text,
-            upper(data.site_name)
-          )
-        )
-      }
-    }
- 
-    // ── 分隔线 ──
-    v(12pt)
-    line(length: 100%, stroke: 0.5pt + colors.border)
-    v(12pt)
- 
-    // ── 描述 ──
-    if data.at("description", default: none) != none {
-      block(
-        text(size: 14pt, fill: colors.text-dim,
-          truncate(data.description, max-lines: 4)
-        )
-      )
-    }
- 
-    // ── 底部 URL ──
-    place(bottom + left,
-      text(size: 10pt, fill: colors.text-dim, style: "italic",
-        truncate(data.url, max-lines: 1)
-      )
-    )
-  }
-)
+    ]
+  ]
+]
