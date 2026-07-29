@@ -69,7 +69,6 @@
     if (status === 'succeeded') {
       setBusy(false);
       notify('图片已生成，并已置顶到历史中。');
-      ensureHistoryCard(panel.dataset.itemId);
     } else if (status === 'failed') {
       setBusy(false);
       notify('生成失败，请检查下方日志。');
@@ -205,22 +204,6 @@
       layoutMasonry();
       requestAnimationFrame(layoutMasonry);
     });
-  }
-
-  async function ensureHistoryCard(id) {
-    if (!id || document.getElementById(`card-${id}`)) return;
-    try {
-      const response = await fetch('/history');
-      if (!response.ok) return;
-      const fragment = document.createElement('template');
-      fragment.innerHTML = await response.text();
-      const card = fragment.content.querySelector(`#card-${id}`);
-      if (!card) return;
-      gallery.prepend(card);
-      scheduleMasonry();
-    } catch (_) {
-      // OOB 插入仍会正常工作；此处只是在它失败时提供兜底。
-    }
   }
 
   const resizeObserver = new ResizeObserver(() => requestAnimationFrame(layoutMasonry));
