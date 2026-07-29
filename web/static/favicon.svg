@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <title>poskad</title>
-  <rect width="64" height="64" rx="12" fill="#000"/>
-  <text x="32" y="43" fill="#fff" font-family="STIX Two Math" font-size="42" font-weight="700" text-anchor="middle">ℙ</text>
+  <rect width="64" height="64" fill="#000"/>
+  <text x="32" y="48" fill="#fff" stroke="#fff" stroke-width="0.8" paint-order="stroke" font-family="STIX Two Math, serif" font-size="54" font-weight="700" text-anchor="middle">ℙ</text>
 </svg>
