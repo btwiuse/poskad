@@ -42,6 +42,14 @@
     box(clip: true, radius: 50%, image(path, width: size))
   )
 }
+
+#let verified-badge() = {
+  box(width: 11pt, height: 11pt, radius: 50%, fill: colors.blue)[
+    #align(center + horizon)[
+      #text(size: 7.5pt, weight: "bold", fill: colors.card, "✓")
+    ]
+  ]
+}
  
 // ── 数据加载 ─────────────────────────────────────────────────────────────────
  
@@ -63,17 +71,18 @@
       ]
       #table(
         columns: (auto, 1fr),
-        column-gutter: 11pt,
+        column-gutter: 8pt,
         align: (left, horizon),
         if data.at("avatar", default: none) != none {
-          render-avatar(data.avatar, size: 44pt)
+          render-avatar(data.avatar, size: 40pt)
         } else {
-          circle(radius: 22pt, fill: colors.border)
+          circle(radius: 20pt, fill: colors.border)
         },
         [
           // 显示名完整保留；卡片高度会随内容扩展，绝不以省略号截断。
-          #text(size: 14.5pt, weight: "bold", data.author)
-          #if data.handle != "" { v(1pt); text(size: 11pt, fill: colors.text-dim, data.handle) }
+          #text(size: 14pt, weight: "bold", data.author)
+          #if data.at("verified", default: false) { h(2pt); verified-badge() }
+          #if data.handle != "" { v(-.5pt); text(size: 11.5pt, fill: colors.text-dim, data.handle) }
         ],
       )
       #v(8pt)

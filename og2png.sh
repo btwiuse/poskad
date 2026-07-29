@@ -80,6 +80,19 @@ if [[ "$title" =~ ^(.*)[[:space:]]\(@([^\)]+)\)[[:space:]]on[[:space:]]X$ ]]; th
   handle="@${BASH_REMATCH[2]}"
 fi
 
+# OG metadata 不包含蓝标。对 X 帖子尽力查询公开 syndication 数据；查询失败
+# 只是不显示认证标记，绝不阻塞图片生成。
+verified=false
+if [[ "$og_url" =~ ^https?://(www\.)?(x\.com|twitter\.com)/[^/]+/status/([0-9]+) ]]; then
+  status_id="${BASH_REMATCH[3]}"
+  echo "→ 查询 X 认证状态..."
+  verification=$(curl -fsSL --max-time 8 "https://api.fxtwitter.com/status/${status_id}" \
+    | jq -r '.tweet.author.verification.verified // false' 2>/dev/null || true)
+  if [[ "$verification" == "true" ]]; then
+    verified=true
+  fi
+fi
+
 # 根据运行环境选择已安装字体：本机使用 macOS 字体，容器使用 Noto。
 has_font() {
   # 不使用 grep -q：set -o pipefail 下它会提前关闭管道并让 fc-list 收到 SIGPIPE。
@@ -186,6 +199,7 @@ DATA=$(jq -n \
   --arg font_cjk "$font_cjk" \
   --arg font_math "$font_math" \
   --arg font_emoji "$font_emoji" \
+  --argjson verified "$verified" \
   --argjson avatar "$avatar_path" \
   --argjson post_image "$post_image_path" \
   '{
@@ -199,6 +213,7 @@ DATA=$(jq -n \
     font_cjk: $font_cjk,
     font_math: $font_math,
     font_emoji: $font_emoji,
+    verified: $verified,
     avatar: $avatar,
     post_image: $post_image
   }'
