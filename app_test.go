@@ -1,11 +1,30 @@
 package poskad
 
 import (
+	"bytes"
+	"html/template"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
+
+func TestCardOOBPreservesCardWrapper(t *testing.T) {
+	templates, err := template.ParseFS(embedded, "web/templates/index.html")
+	if err != nil {
+		t.Fatal(err)
+	}
+	item := historyItem{ID: "019fad39-0000-7000-8000-000000000000", URL: "https://example.com", ImageURL: "/media/test/image.png"}
+	var output bytes.Buffer
+	if err := templates.ExecuteTemplate(&output, "card-oob", item); err != nil {
+		t.Fatal(err)
+	}
+	got := output.String()
+	if !strings.Contains(got, `hx-swap-oob="afterbegin:#gallery"`) || !strings.Contains(got, `class="card"`) {
+		t.Fatalf("card-oob must insert a full card, got %q", got)
+	}
+}
 
 func TestRequestBaseURLUsesForwardedProtocol(t *testing.T) {
 	r := httptest.NewRequest("GET", "http://poskad.example/", nil)

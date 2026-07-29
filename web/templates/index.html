@@ -89,11 +89,9 @@
 {{end}}
 
 {{define "card-oob"}}
-<article class="card" id="card-{{.ID}}" hx-swap-oob="afterbegin:#gallery">
-  <button type="button" class="image-link" data-modal-open data-id="{{.ID}}" data-image="{{.ImageURL}}" data-source="{{.URL}}" aria-label="预览生成图片">
-    <img src="{{.ImageURL}}" alt="由 {{.URL}} 生成的 OG 卡片" loading="lazy">
-  </button>
-</article>
+<div hx-swap-oob="afterbegin:#gallery">
+  {{template "card" .}}
+</div>
 {{end}}
 
 {{define "job"}}
