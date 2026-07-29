@@ -94,7 +94,16 @@ else
   font_cjk="Noto Sans CJK SC"
   font_emoji="Noto Color Emoji"
 fi
-font_math="STIX Two Math"
+if has_font "STIX Two Math"; then
+  font_math="STIX Two Math"
+elif has_font "STIX Math"; then
+  font_math="STIX Math"
+elif has_font "STIXGeneral"; then
+  font_math="STIXGeneral"
+else
+  # 没有单独数学字体时，回退到已验证存在的正文字体，避免 Typst 警告。
+  font_math="$font_sans"
+fi
 
 # ── 3. 准备模板资源 ──────────────────────────────────────────────────────────
 mkdir -p "$WORK_DIR/assets"
