@@ -49,16 +49,14 @@
  
 // ── 页面设置 ─────────────────────────────────────────────────────────────────
  
-// 画布保持透明，只有圆角卡片本身着色，导出的 PNG 可直接叠加到任意背景。
-#set page(width: 600pt, height: auto, margin: 0pt, fill: none)
+// 导出的 PNG 没有透明留白，且外框为直角；网页端可按自身视觉添加圆角。
+#set page(width: 600pt, height: auto, margin: 0pt, fill: colors.card)
 // 字体由脚本根据当前运行环境选择，避免 macOS 与 Linux 容器的缺字警告。
 #set text(font: (data.font_sans, data.font_cjk, data.font_math, data.font_emoji), fill: colors.text)
  
 // ── 主内容 ───────────────────────────────────────────────────────────────────
  
-#block(width: 100%, inset: 20pt)[
-  #rect(width: 100%, radius: 16pt, stroke: 0.75pt + colors.border, fill: colors.card)[
-    #block(width: 100%, inset: 18pt)[
+#block(width: 100%, inset: 18pt)[
       // 𝕏 独立置于帖首；二维码则与原链接一起置于正文分隔线下方。
       #place(top + right)[
         #text(size: 24pt, weight: "bold", fill: colors.text, "𝕏")
@@ -70,7 +68,7 @@
         if data.at("avatar", default: none) != none {
           render-avatar(data.avatar, size: 44pt)
         } else {
-          circle(diameter: 44pt, fill: colors.border)
+          circle(radius: 22pt, fill: colors.border)
         },
         [
           // 显示名完整保留；卡片高度会随内容扩展，绝不以省略号截断。
@@ -110,6 +108,4 @@
           ]
         ],
       )
-    ]
-  ]
 ]

@@ -212,5 +212,6 @@ echo "→ 编译 Typst 模板..."
   output.png)
  
 # ── 8. 输出 ──────────────────────────────────────────────────────────────────
-cp "$WORK_DIR/output.png" "$OUTPUT"
+# Typst 会保留 Alpha 通道；导出的分享图使用不透明 RGB PNG，避免透明边缘。
+magick "$WORK_DIR/output.png" -alpha off "$OUTPUT"
 echo "✓ 已生成: $OUTPUT"
