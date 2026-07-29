@@ -166,7 +166,7 @@ fi
 echo "→ 生成原帖二维码..."
 npx --yes --package=qrcode@1.5.4 qrcode \
   --output="$WORK_DIR/assets/post-qr.png" \
-  --width=240 --qzone=2 --error=H -- \
+  --width=240 --qzone=2 --error=M -- \
   "$og_url" >/dev/null
 
 # 将 Unicode 𝕏 固定烧录在二维码几何中心，避免受 Typst 布局流影响。
