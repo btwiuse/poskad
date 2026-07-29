@@ -16,7 +16,7 @@ a { color: inherit; }
 .shell { width: min(1180px, calc(100% - 32px)); margin: 0 auto; padding: 76px 0 96px; }
 .hero { max-width: 700px; margin: 0 auto 42px; text-align: center; }
 .eyebrow { color: var(--accent); font-size: .72rem; font-weight: 800; letter-spacing: .16em; margin: 0 0 16px; }
-h1 { font-size: clamp(2.6rem, 7vw, 5.7rem); letter-spacing: -.075em; line-height: .91; margin: 0; }
+h1 { font-size: clamp(2.6rem, 7vw, 5.7rem); line-height: .91; margin: 0; }
 .hero > p:last-child { color: var(--muted); margin: 24px auto 0; max-width: 470px; }
 .composer { background: color-mix(in srgb, var(--surface) 92%, transparent); border: 1px solid var(--line); border-radius: 18px; margin: 0 auto 18px; max-width: 780px; padding: 18px; box-shadow: 0 24px 80px #0006; }
 label { display: block; color: var(--muted); font-size: .78rem; font-weight: 700; margin: 0 0 8px; }
