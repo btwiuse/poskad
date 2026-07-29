@@ -122,7 +122,7 @@ download_as_png() {
 
   echo "→ 下载${label}: $url"
   if curl -sfL --max-time "$timeout" -o "$download" "$url" \
-    && magick "${download}[0]" "$output"; then
+    && magick "${download}[0]" -strip "$output"; then
     return 0
   fi
   echo "  ⚠ ${label}下载或转换失败，跳过"
