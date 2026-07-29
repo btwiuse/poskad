@@ -44,10 +44,8 @@
 }
 
 #let verified-badge() = {
-  box(width: 11pt, height: 11pt, radius: 50%, fill: colors.blue)[
-    #align(center + horizon)[
-      #text(size: 7.5pt, weight: "bold", fill: colors.card, "✓")
-    ]
+  box(width: 15pt, height: 15pt, inset: 0pt)[
+    #image("assets/verified.svg", width: 100%)
   ]
 }
  
@@ -71,7 +69,8 @@
       ]
       #table(
         columns: (auto, 1fr),
-        column-gutter: 8pt,
+        column-gutter: 10pt,
+        inset: 0pt,
         align: (left, horizon),
         if data.at("avatar", default: none) != none {
           render-avatar(data.avatar, size: 40pt)
@@ -79,10 +78,14 @@
           circle(radius: 20pt, fill: colors.border)
         },
         [
-          // 显示名完整保留；卡片高度会随内容扩展，绝不以省略号截断。
-          #text(size: 14pt, weight: "bold", data.author)
-          #if data.at("verified", default: false) { h(2pt); verified-badge() }
-          #if data.handle != "" { v(-.5pt); text(size: 11.5pt, fill: colors.text-dim, data.handle) }
+          // X 使用 40px 头像、15px 名称/handle；在 2× PNG 中保持相同视觉比例。
+          #stack(dir: ttb, spacing: 0pt,
+            [
+              #text(size: 15pt, weight: "bold", data.author)
+              #if data.at("verified", default: false) { h(2pt); verified-badge() }
+            ],
+            [#if data.handle != "" { text(size: 15pt, fill: colors.text-dim, data.handle) }],
+          )
         ],
       )
       #v(8pt)

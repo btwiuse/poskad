@@ -186,6 +186,7 @@ magick "$WORK_DIR/assets/post-qr.png" "$WORK_DIR/assets/x-logo.png" \
 
 # ── 6. 准备 Typst 模板 ───────────────────────────────────────────────────────
 cp "$TEMPLATE_DIR/og-card.typ" "$WORK_DIR/"
+cp "$TEMPLATE_DIR/verified.svg" "$WORK_DIR/assets/verified.svg"
  
 # ── 7. 构建 JSON 数据 ────────────────────────────────────────────────────────
 DATA=$(jq -n \

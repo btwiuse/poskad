@@ -19,7 +19,7 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 COPY --from=build /out/poskad /usr/local/bin/poskad
 COPY --from=build /out/ogpk /usr/local/bin/ogpk
-COPY og2png.sh og-card.typ ./
+COPY og2png.sh og-card.typ verified.svg ./
 RUN chmod +x ./og2png.sh \
     && mkdir -p /app/output \
     && fc-cache -f \
