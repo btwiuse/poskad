@@ -9,10 +9,34 @@
   const previousButton = document.querySelector('[data-modal-prev]');
   const nextButton = document.querySelector('[data-modal-next]');
   const gallery = document.querySelector('#gallery');
+  const themeToggle = document.querySelector('#theme-toggle');
+  const themeInput = document.querySelector('#card-theme');
   let busy = false;
   let toastTimer;
   let currentOpener = null;
   const uuidV7Pattern = /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+
+  function applyTheme(theme) {
+    const isLight = theme === 'light';
+    document.documentElement.dataset.theme = isLight ? 'light' : 'dark';
+    themeInput.value = isLight ? 'light' : 'dark';
+    themeToggle.setAttribute('aria-pressed', String(isLight));
+    themeToggle.setAttribute('aria-label', isLight ? '切换深色主题' : '切换浅色主题');
+    themeToggle.innerHTML = isLight
+      ? '<span aria-hidden="true">◐</span><span class="theme-toggle-label">Dark</span>'
+      : '<span aria-hidden="true">☼</span><span class="theme-toggle-label">Light</span>';
+    document.querySelector('meta[name="theme-color"]').content = isLight ? '#f7f9f9' : '#09090b';
+  }
+
+  const storedTheme = localStorage.getItem('poskad-theme');
+  applyTheme(storedTheme === 'light' || storedTheme === 'dark'
+    ? storedTheme
+    : (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'));
+  themeToggle.addEventListener('click', () => {
+    const theme = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
+    localStorage.setItem('poskad-theme', theme);
+    applyTheme(theme);
+  });
 
   function notify(message) {
     clearTimeout(toastTimer);
@@ -65,7 +89,7 @@
         return;
       }
       setBusy(true);
-      form.reset();
+      form.querySelector('#url').value = '';
       notify('开始生成，日志会在下方持续更新。');
     }
   });

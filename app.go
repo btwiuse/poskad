@@ -59,6 +59,7 @@ type job struct {
 	mu        sync.RWMutex
 	id        string
 	url       string
+	theme     string
 	status    string
 	logs      []string
 	createdAt time.Time
@@ -237,8 +238,9 @@ func (a *app) handleGenerate(w http.ResponseWriter, r *http.Request) {
 		a.renderErrorPanel(w, "请输入有效的 http:// 或 https:// 链接")
 		return
 	}
+	theme := cardTheme(r.Form.Get("theme"))
 
-	j := &job{id: uuidV7(), url: rawURL, status: "queued", createdAt: time.Now()}
+	j := &job{id: uuidV7(), url: rawURL, theme: theme, status: "queued", createdAt: time.Now()}
 	j.appendLog("任务已创建，等待生成器启动…")
 	a.jobsMu.Lock()
 	a.jobs[j.id] = j
@@ -300,7 +302,7 @@ func (a *app) runJob(j *job) {
 	}
 
 	imagePath := filepath.Join(dir, "image.png")
-	cmd := exec.Command(a.script, j.url, imagePath)
+	cmd := exec.Command(a.script, "--theme", j.theme, j.url, imagePath)
 	cmd.Dir = a.workDir
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
@@ -456,6 +458,13 @@ func (j *job) snapshot() jobView {
 func validSourceURL(raw string) bool {
 	u, err := url.ParseRequestURI(raw)
 	return err == nil && (u.Scheme == "http" || u.Scheme == "https") && u.Host != ""
+}
+
+func cardTheme(raw string) string {
+	if raw == "light" {
+		return "light"
+	}
+	return "dark"
 }
 
 // sharedSourceURL accepts the explicit URL field first, then falls back to a

@@ -81,6 +81,17 @@ func TestSharedSourceURL(t *testing.T) {
 	}
 }
 
+func TestCardTheme(t *testing.T) {
+	if got := cardTheme("light"); got != "light" {
+		t.Fatalf("cardTheme(light) = %q", got)
+	}
+	for _, value := range []string{"", "dark", "anything else"} {
+		if got := cardTheme(value); got != "dark" {
+			t.Fatalf("cardTheme(%q) = %q, want dark", value, got)
+		}
+	}
+}
+
 func TestShareTargetRedirectsToSharedURL(t *testing.T) {
 	var body bytes.Buffer
 	writer := multipart.NewWriter(&body)

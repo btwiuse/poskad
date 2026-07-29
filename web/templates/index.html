@@ -30,6 +30,9 @@
   </head>
   <body>
     <main class="shell">
+      <button id="theme-toggle" class="theme-toggle" type="button" aria-label="切换浅色主题" aria-pressed="false">
+        <span aria-hidden="true">☼</span><span class="theme-toggle-label">Light</span>
+      </button>
       <header class="hero">
         <p class="eyebrow">POSKAD</p>
         <h1><span class="headline-phrase">Every 𝕏 Post</span> <span class="headline-phrase">Deserves a Card</span></h1>
@@ -38,6 +41,7 @@
 
       <section class="composer" aria-label="生成图片">
         <form id="generator-form" hx-post="/generate" hx-target="#job-panel" hx-swap="outerHTML">
+          <input id="card-theme" name="theme" type="hidden" value="dark">
           <label for="url">原文链接</label>
           <div class="url-row">
             <input id="url" name="url" type="url" placeholder="https://x.com/..." autocomplete="url" value="{{.ShareURL}}" {{if .ShareURL}}data-share-url="{{.ShareURL}}"{{end}} required>
