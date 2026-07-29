@@ -59,6 +59,7 @@
         return;
       }
       setBusy(true);
+      form.reset();
       notify('开始生成，日志会在下方持续更新。');
     }
   });
