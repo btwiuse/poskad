@@ -50,12 +50,12 @@ body { margin: 0; background: radial-gradient(70% 40% at 50% 0%, var(--hero-glow
 a { color: inherit; }
 .shell { position: relative; width: min(1180px, calc(100% - 32px)); margin: 0 auto; padding: 76px 0 96px; }
 .hero { max-width: 700px; margin: 0 auto 42px; text-align: center; }
-.wordmark { background: color-mix(in srgb, var(--accent) 12%, var(--surface)); border: 1px solid color-mix(in srgb, var(--accent) 42%, var(--line)); border-radius: 999px; color: var(--accent); display: inline-block; font-family: "STIX Two Math", "Cambria Math", serif; font-size: 1em; font-weight: 400; letter-spacing: 0; line-height: .86; padding: .08em .15em; vertical-align: .04em; white-space: nowrap; }
+.wordmark { border-radius: 999px; color: var(--accent); display: inline-block; font-family: "STIX Two Math", "Cambria Math", serif; font-weight: 800; letter-spacing: 0; line-height: .86; white-space: nowrap; }
 .theme-toggle { align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; color: var(--text); display: inline-flex; gap: 7px; min-height: 36px; padding: 0 12px; position: absolute; right: 0; top: 28px; }
 .theme-toggle:hover { background: var(--surface-2); filter: none; }
 .theme-toggle span[aria-hidden="true"] { font-size: 1.1rem; line-height: 1; }
 h1 { font-size: clamp(2.6rem, 7vw, 5.7rem); line-height: .91; margin: 0; }
-.headline-phrase { display: inline-block; }
+.headline-phrase { display: inline-block; white-space: nowrap; }
 .hero > p:last-child { color: var(--muted); margin: 24px auto 0; max-width: 470px; }
 .composer { background: color-mix(in srgb, var(--surface) 92%, transparent); border: 1px solid var(--line); border-radius: 18px; margin: 0 auto 18px; max-width: 780px; padding: 18px; box-shadow: 0 24px 80px #0006; }
 label { display: block; color: var(--muted); font-size: .78rem; font-weight: 700; margin: 0 0 8px; }
