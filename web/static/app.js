@@ -132,21 +132,25 @@
       return;
     }
     if (event.target.closest('[data-copy-image]')) {
-      try {
-        const response = await fetch(modalImage.src);
-        const blob = await response.blob();
-        await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
-        notify('图片已复制到剪贴板。');
-      } catch (_) {
-        try {
-          await navigator.clipboard.writeText(modalImage.src);
-          notify('浏览器不支持复制图片，已复制图片链接。');
-        } catch (_) {
-          notify('浏览器未授予剪贴板权限，请使用下载按钮。');
-        }
-      }
+      await copyCurrentImage();
     }
   });
+
+  async function copyCurrentImage() {
+    try {
+      const response = await fetch(modalImage.src);
+      const blob = await response.blob();
+      await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
+      notify('图片已复制到剪贴板。');
+    } catch (_) {
+      try {
+        await navigator.clipboard.writeText(modalImage.src);
+        notify('浏览器不支持复制图片，已复制图片链接。');
+      } catch (_) {
+        notify('浏览器未授予剪贴板权限，请使用下载按钮。');
+      }
+    }
+  }
 
   function openModal(opener, syncHash = true) {
     currentOpener = opener;
@@ -179,13 +183,22 @@
   }
 
   document.addEventListener('keydown', (event) => {
-    if (!modal.open) return;
-    if (event.key === 'ArrowLeft') {
+    if (!modal.open || event.metaKey || event.ctrlKey || event.altKey) return;
+    if (event.key === 'ArrowLeft' || event.key === 'k') {
       event.preventDefault();
       navigateModal(-1);
-    } else if (event.key === 'ArrowRight') {
+    } else if (event.key === 'ArrowRight' || event.key === 'j') {
       event.preventDefault();
       navigateModal(1);
+    } else if (event.key === 'c') {
+      event.preventDefault();
+      copyCurrentImage();
+    } else if (event.key === 'd') {
+      event.preventDefault();
+      download.click();
+    } else if (event.key === 'o') {
+      event.preventDefault();
+      source.click();
     }
   });
 
