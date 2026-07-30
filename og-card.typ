@@ -140,11 +140,16 @@
       }
       // 页脚在内容下方正常流式排版：正文再长也不会与二维码重叠。
       #table(
-        columns: (1fr, auto),
-        column-gutter: 16pt,
+        columns: (auto, 1fr),
+        column-gutter: 24pt,
         inset: 0pt,
         stroke: none,
         align: (left, top),
+        [
+          #box(fill: colors.qr-bg, radius: 7pt, inset: 6pt)[
+            #image("assets/post-qr-logo.png", width: 78pt)
+          ]
+        ],
         table.cell(align: left + top)[
           // Keep both labels aligned to the QR image, not its padded white shell.
           #box(width: 100%, height: 90pt)[
@@ -158,13 +163,6 @@
               #text(size: 9pt, fill: colors.text-dim, "Made with")
               #h(3pt)
               #poskad-logo()
-            ]
-          ]
-        ],
-        [
-          #align(right)[
-            #box(fill: colors.qr-bg, radius: 7pt, inset: 6pt)[
-              #image("assets/post-qr-logo.png", width: 78pt)
             ]
           ]
         ],
