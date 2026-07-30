@@ -49,14 +49,20 @@
   })
 }
  
-// ── 圆形头像 ─────────────────────────────────────────────────────────────────
+// ── 头像 / 方形 OG 图 ────────────────────────────────────────────────────────
  
-#let render-avatar(path, border, size: 48pt) = {
-  box(
-    clip: true, fill: border,
-    stroke: 0.75pt + border, radius: 50%, inset: 1pt,
-    box(clip: true, radius: 50%, image(path, width: size))
-  )
+#let render-avatar(path, border, shape: "round", size: 48pt) = {
+  if shape == "square" {
+    box(
+      clip: true,
+      image(path, width: size, height: size)
+    )
+  } else {
+    box(
+      clip: true, radius: 50%,
+      box(clip: true, radius: 50%, image(path, width: size))
+    )
+  }
 }
 
 #let verified-badge() = {
@@ -106,7 +112,9 @@
         stroke: none,
         align: (left, horizon),
         if data.at("avatar", default: none) != none {
-          render-avatar(data.avatar, colors.border, size: 40pt)
+          render-avatar(data.avatar, colors.border, shape: data.at("avatar_shape", default: "round"), size: 40pt)
+        } else if data.at("avatar_shape", default: "round") == "square" {
+          box(width: 40pt, height: 40pt, fill: colors.border)
         } else {
           circle(radius: 20pt, fill: colors.border)
         },

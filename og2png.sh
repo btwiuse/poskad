@@ -7,7 +7,7 @@ WORK_DIR=$(mktemp -d)
 trap 'rm -rf "$WORK_DIR"' EXIT
  
 # ── 依赖检查 ──────────────────────────────────────────────────────────────────
-for cmd in ogpk typst jq curl npx magick fc-match fc-list; do
+for cmd in ogpk typst jq curl node npx magick fc-match fc-list; do
   if ! command -v "$cmd" &>/dev/null; then
     echo "error: $cmd not found in PATH" >&2
     exit 1
@@ -209,21 +209,66 @@ download_as_png() {
   local name="$3"
   local timeout="$4"
   local download="$WORK_DIR/assets/${name}.download"
+  local headers="$WORK_DIR/assets/${name}.headers"
   local output="$WORK_DIR/assets/${name}.png"
+  local content_type extension
 
   echo "→ 下载${label}: $url"
-  if curl -sfL --max-time "$timeout" -o "$download" "$url" \
-    && magick "${download}[0]" -strip "$output"; then
-    return 0
+  if curl -sfL --max-time "$timeout" -D "$headers" -o "$download" "$url"; then
+    # ImageMagick 在某些平台无法仅凭内容识别 ICO。按照最终响应的 MIME 类型
+    # 补上后缀，也让没有文件扩展名的 SVG/WebP favicon 可以正确解码。
+    content_type=$(awk -F ': *' 'tolower($1) == "content-type" { value=tolower($2) } END { sub(/;.*/, "", value); gsub(/\r/, "", value); print value }' "$headers")
+    extension=""
+    case "$content_type" in
+      image/x-icon|image/vnd.microsoft.icon) extension=".ico" ;;
+      image/svg+xml) extension=".svg" ;;
+      image/webp) extension=".webp" ;;
+      image/avif) extension=".avif" ;;
+      image/png) extension=".png" ;;
+      image/jpeg) extension=".jpg" ;;
+      image/gif) extension=".gif" ;;
+    esac
+    if [ -n "$extension" ]; then
+      mv "$download" "${download}${extension}"
+      download="${download}${extension}"
+    fi
+  fi
+  if [ -f "$download" ]; then
+    # ImageMagick 的 SVG 代理在部分 macOS 环境无法为 <text> 找到字体。
+    # librsvg 会进行字体回退，优先用它转换 SVG；不可用时再保留 ImageMagick
+    # 的 best-effort 路径，避免把 rsvg-convert 变成所有格式的硬依赖。
+    if [[ "$extension" == ".svg" ]] && command -v rsvg-convert &>/dev/null; then
+      if rsvg-convert --output "$output" "$download"; then
+        return 0
+      fi
+    fi
+    if magick "${download}[0]" -strip "$output"; then
+      return 0
+    fi
   fi
   echo "  ⚠ ${label}下载或转换失败，跳过"
   return 1
 }
 
+is_x_url=false
+if [[ "$og_url" =~ ^https?://(www\.)?(x\.com|twitter\.com)(/|$) ]]; then
+  is_x_url=true
+fi
+
+is_200_avatar=false
+if [[ "$image_width" == "200" && "$image_height" == "200" ]] \
+  || [[ "$image_url" == *_200x200.* ]]; then
+  is_200_avatar=true
+fi
+
 avatar_path="null"
+avatar_shape="round"
 post_image_path="null"
 if [ -n "$image_url" ] && [ "$image_url" != "null" ]; then
-  if [[ -n "$handle" && ( "$image_width" != "400" || "$image_height" != "400" ) && "$image_url" != *_200x200.jpg ]]; then
+  if [[ "$is_x_url" == false && "$is_200_avatar" == false ]]; then
+    avatar_shape="square"
+  fi
+  if [[ "$is_x_url" == true && -n "$handle" && ( "$image_width" != "400" || "$image_height" != "400" ) && "$is_200_avatar" == false ]]; then
     avatar_url="https://unavatar.io/x/${handle#@}"
     if download_as_png "头像" "$avatar_url" "avatar" 15; then
       avatar_path='"assets/avatar.png"'
@@ -235,11 +280,78 @@ if [ -n "$image_url" ] && [ "$image_url" != "null" ]; then
   else
     if download_as_png "头像" "$image_url" "avatar" 10; then
       avatar_path='"assets/avatar.png"'
+      # 站外的普通 OG 图不是头像。以正方形容器展示，并取图片正中最大的方形，
+      # 避免横图或竖图被压缩变形。
+      if [[ "$is_x_url" == false && "$is_200_avatar" == false ]]; then
+        magick "$WORK_DIR/assets/avatar.png" \
+          -gravity center -crop '%[fx:min(w,h)]x%[fx:min(w,h)]+0+0' +repage \
+          "$WORK_DIR/assets/avatar-square.png"
+        mv "$WORK_DIR/assets/avatar-square.png" "$WORK_DIR/assets/avatar.png"
+      fi
     fi
   fi
 fi
 
-# ── 5. 生成原帖二维码 ────────────────────────────────────────────────────────
+# ── 5. 获取链接对应的 favicon，并生成原帖二维码 ──────────────────────────────
+# favicon 没有统一路径或格式。优先使用页面声明的 icon（相对地址也会展开），
+# 再尝试浏览器惯例的几个路径。所有候选都下载并交给 ImageMagick 解码，因此
+# ICO、PNG、WebP、SVG 等常见格式都可用；全部失败时不放中心图标。
+favicon_candidates() {
+  local page_url="$1"
+  local page_file="$WORK_DIR/favicon-page.html"
+  local origin
+
+  origin=$(node -e '
+    try { console.log(new URL(process.argv[1]).origin) } catch { process.exit(1) }
+  ' "$page_url") || return 0
+
+  if curl -fsSL --max-time 12 \
+    -A 'Mozilla/5.0 (compatible; Poskad/1.0; +https://github.com/gear/omfg)' \
+    -H 'Accept: text/html,application/xhtml+xml' \
+    -o "$page_file" "$page_url"; then
+    node - "$page_url" "$page_file" <<'NODE'
+const fs = require("fs");
+const [pageUrl, pageFile] = process.argv.slice(2);
+const html = fs.readFileSync(pageFile, "utf8");
+const candidates = [];
+const seen = new Set();
+const add = (href) => {
+  try {
+    const url = new URL(href, pageUrl).href;
+    if (/^https?:$/i.test(new URL(url).protocol) && !seen.has(url)) {
+      seen.add(url);
+      candidates.push(url);
+    }
+  } catch {}
+};
+const attr = (tag, name) => {
+  const match = tag.match(new RegExp(`\\b${name}\\s*=\\s*(?:"([^"]*)"|'([^']*)'|([^\\s>]+))`, "i"));
+  return match && (match[1] ?? match[2] ?? match[3]);
+};
+const links = html.match(/<link\b[^>]*>/gi) || [];
+for (const kind of ["icon", "apple-touch-icon", "mask-icon"]) {
+  for (const link of links) {
+    const rel = (attr(link, "rel") || "").toLowerCase().split(/\s+/);
+    if (rel.some(value => value === kind || value.startsWith(`${kind}-`))) add(attr(link, "href"));
+  }
+}
+process.stdout.write(candidates.join("\n"));
+NODE
+  fi
+
+  printf '\n%s/favicon.ico\n%s/favicon.png\n%s/apple-touch-icon.png\n' \
+    "$origin" "$origin" "$origin"
+}
+
+favicon_path=""
+while IFS= read -r favicon_url; do
+  [ -n "$favicon_url" ] || continue
+  if download_as_png "二维码图标" "$favicon_url" "favicon" 10; then
+    favicon_path="$WORK_DIR/assets/favicon.png"
+    break
+  fi
+done < <(favicon_candidates "$og_url")
+
 # 使用固定版本的 CLI，首次运行由 npx 下载并缓存；二维码始终指向 OG 原链接。
 echo "→ 生成原帖二维码..."
 npx --yes --package=qrcode@1.5.4 qrcode \
@@ -247,20 +359,21 @@ npx --yes --package=qrcode@1.5.4 qrcode \
   --width=240 --qzone=2 --error=M -- \
   "$og_url" >/dev/null
 
-# 将 Unicode 𝕏 固定烧录在二维码几何中心，避免受 Typst 布局流影响。
-x_font=$(fc-match -f '%{file}' ':charset=1d54f' | head -n 1)
-if [ -z "$x_font" ]; then
-  echo "error: 未找到支持 Unicode 𝕏 的字体" >&2
-  exit 1
+if [ -n "$favicon_path" ]; then
+  # 紧贴 favicon 的圆角白底保护 QR 纠错区；图标自身保持纵横比，避免拉伸。
+  magick -size 42x42 xc:white \
+    -fill '#ffffff' -stroke '#d0d7de' -strokewidth 1 \
+    -draw 'roundrectangle 1,1 40,40 6,6' \
+    \( "$favicon_path" -resize '34x34>' -background none -gravity center -extent 34x34 \
+      \( -size 34x34 xc:none -fill white -draw 'roundrectangle 0,0 33,33 5,5' \) \
+      -compose DstIn -composite \) \
+    -gravity center -compose over -composite "$WORK_DIR/assets/qr-favicon.png"
+  magick "$WORK_DIR/assets/post-qr.png" "$WORK_DIR/assets/qr-favicon.png" \
+    -gravity center -compose over -composite "$WORK_DIR/assets/post-qr-logo.png"
+else
+  echo "  ⚠ 未找到可用 favicon，二维码不添加中心图标"
+  cp "$WORK_DIR/assets/post-qr.png" "$WORK_DIR/assets/post-qr-logo.png"
 fi
-# 先裁剪字形自身的边界再居中合成，避免字体字框/基线令 𝕏 视觉偏移。
-magick -size 52x52 xc:none \
-  -fill '#000000' -stroke '#ffffff' -strokewidth 2 \
-  -draw 'roundrectangle 1,1 50,50 7,7' \
-  \( -background none -fill '#ffffff' -font "$x_font" -pointsize 28 label:'𝕏' -trim +repage \) \
-  -gravity center -compose over -composite "$WORK_DIR/assets/x-logo.png"
-magick "$WORK_DIR/assets/post-qr.png" "$WORK_DIR/assets/x-logo.png" \
-  -gravity center -compose over -composite "$WORK_DIR/assets/post-qr-logo.png"
 
 # ── 6. 准备 Typst 模板 ───────────────────────────────────────────────────────
 cp "$TEMPLATE_DIR/og-card.typ" "$WORK_DIR/"
@@ -278,6 +391,7 @@ BASE_DATA=$(jq -n \
   --arg font_cjk "$font_cjk" \
   --arg font_math "$font_math" \
   --arg font_emoji "$font_emoji" \
+  --arg avatar_shape "$avatar_shape" \
   --argjson verified "$verified" \
   --argjson avatar "$avatar_path" \
   --argjson post_image "$post_image_path" \
@@ -294,6 +408,7 @@ BASE_DATA=$(jq -n \
     font_emoji: $font_emoji,
     verified: $verified,
     avatar: $avatar,
+    avatar_shape: $avatar_shape,
     post_image: $post_image
   }'
 )
