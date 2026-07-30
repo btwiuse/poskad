@@ -12,6 +12,7 @@
   const themeToggle = document.querySelector('#theme-toggle');
   const themeInput = document.querySelector('#card-theme');
   let busy = false;
+  let loadingHistory = false;
   let toastTimer;
   let currentOpener = null;
   const uuidV7Pattern = /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
@@ -182,7 +183,28 @@
     openModal(openers[(index + direction + openers.length) % openers.length]);
   }
 
-  document.addEventListener('keydown', (event) => {
+  async function loadRemainingHistory() {
+    if (loadingHistory) return;
+    loadingHistory = true;
+    try {
+      let sentinel = gallery.querySelector('.history-sentinel');
+      while (sentinel) {
+        // Prevent the intersection observer from issuing a duplicate request.
+        sentinel.removeAttribute('hx-trigger');
+        const response = await fetch(sentinel.getAttribute('hx-get'));
+        if (!response.ok) throw new Error('history request failed');
+        sentinel.outerHTML = await response.text();
+        scheduleMasonry();
+        sentinel = gallery.querySelector('.history-sentinel');
+      }
+    } catch (_) {
+      notify('加载更多图片失败。');
+    } finally {
+      loadingHistory = false;
+    }
+  }
+
+  document.addEventListener('keydown', async (event) => {
     if (!modal.open || event.metaKey || event.ctrlKey || event.altKey) return;
     if (event.key === 'ArrowLeft' || event.key === 'k') {
       event.preventDefault();
@@ -199,6 +221,16 @@
     } else if (event.key === 'o') {
       event.preventDefault();
       source.click();
+    } else if (event.key === 'g') {
+      event.preventDefault();
+      const first = modalOpeners()[0];
+      if (first) openModal(first);
+    } else if (event.key === 'G') {
+      event.preventDefault();
+      await loadRemainingHistory();
+      const openers = modalOpeners();
+      const last = openers[openers.length - 1];
+      if (last) openModal(last);
     }
   });
 
