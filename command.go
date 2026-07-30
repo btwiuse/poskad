@@ -23,8 +23,8 @@ func NewCommand() *cobra.Command {
 	flags := cmd.Flags()
 	flags.StringVarP(&config.Port, "port", "p", config.Port, "HTTP listen port (env: PORT)")
 	flags.StringVarP(&config.OutputDir, "output-dir", "o", config.OutputDir, "Directory for generated cards (env: OUTPUT_DIR)")
-	flags.StringVar(&config.OG2PNGScript, "og2png-script", config.OG2PNGScript, "Path to og2png.sh (env: OG2PNG_SCRIPT)")
-	flags.StringVarP(&config.WorkDir, "work-dir", "w", config.WorkDir, "Working directory for og2png.sh (env: WORK_DIR)")
+	flags.StringVar(&config.PoskadScript, "poskad-script", config.PoskadScript, "Path to poskad.sh (env: POSKAD_SCRIPT)")
+	flags.StringVarP(&config.WorkDir, "work-dir", "w", config.WorkDir, "Working directory for poskad.sh (env: WORK_DIR)")
 
 	return cmd
 }

@@ -35,7 +35,7 @@ var sharedURLPattern = regexp.MustCompile(`https?://[^\s<>"']+`)
 type Config struct {
 	Port         string
 	OutputDir    string
-	OG2PNGScript string
+	PoskadScript string
 	WorkDir      string
 }
 
@@ -105,7 +105,7 @@ func ConfigFromEnv() Config {
 	return Config{
 		Port:         envOr("PORT", "8080"),
 		OutputDir:    envOr("OUTPUT_DIR", "output"),
-		OG2PNGScript: envOr("OG2PNG_SCRIPT", "./og2png.sh"),
+		PoskadScript: envOr("POSKAD_SCRIPT", "./poskad.sh"),
 		WorkDir:      envOr("WORK_DIR", "."),
 	}
 }
@@ -113,7 +113,7 @@ func ConfigFromEnv() Config {
 // RunWithConfig starts the HTTP service with an explicit configuration.
 func RunWithConfig(config Config) error {
 	outputDir := config.OutputDir
-	script := config.OG2PNGScript
+	script := config.PoskadScript
 	workDir := config.WorkDir
 
 	absOutput, err := filepath.Abs(outputDir)
@@ -157,7 +157,7 @@ func RunWithConfig(config Config) error {
 	mux.HandleFunc("/media/", a.handleMedia)
 
 	addr := ":" + config.Port
-	log.Printf("og2png web listening on %s (output: %s)", addr, absOutput)
+	log.Printf("poskad web listening on %s (output: %s)", addr, absOutput)
 	return http.ListenAndServe(addr, securityHeaders(mux))
 }
 
@@ -317,7 +317,7 @@ func (a *app) runJob(j *job) {
 		return
 	}
 	if err := cmd.Start(); err != nil {
-		j.fail(fmt.Sprintf("无法启动 og2png.sh: %v", err))
+		j.fail(fmt.Sprintf("无法启动 poskad.sh: %v", err))
 		return
 	}
 

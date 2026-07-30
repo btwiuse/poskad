@@ -49,11 +49,11 @@ func TestRequestBaseURLUsesForwardedProtocol(t *testing.T) {
 func TestConfigFromEnv(t *testing.T) {
 	t.Setenv("PORT", "3000")
 	t.Setenv("OUTPUT_DIR", "cards")
-	t.Setenv("OG2PNG_SCRIPT", "/tools/og2png.sh")
+	t.Setenv("POSKAD_SCRIPT", "/tools/poskad.sh")
 	t.Setenv("WORK_DIR", "/workspace")
 
 	got := ConfigFromEnv()
-	want := Config{Port: "3000", OutputDir: "cards", OG2PNGScript: "/tools/og2png.sh", WorkDir: "/workspace"}
+	want := Config{Port: "3000", OutputDir: "cards", PoskadScript: "/tools/poskad.sh", WorkDir: "/workspace"}
 	if got != want {
 		t.Fatalf("ConfigFromEnv() = %#v, want %#v", got, want)
 	}

@@ -54,8 +54,8 @@
 #let render-avatar(path, border, shape: "round", size: 48pt) = {
   if shape == "square" {
     box(
-      clip: true, stroke: 0.6pt + border,
-      image(path, width: size, height: size)
+      clip: true, radius: 4pt, stroke: 0.6pt + border,
+      box(clip: true, radius: 4pt, image(path, width: size, height: size))
     )
   } else {
     box(
@@ -65,9 +65,10 @@
   }
 }
 
-#let verified-badge() = {
+#let verified-badge(kind: "blue") = {
+  let asset = if kind == "gold" { "assets/verified-gold.svg" } else { "assets/verified.svg" }
   box(width: 15pt, height: 15pt, baseline: 12%, inset: 0pt)[
-    #image("assets/verified.svg", width: 100%)
+    #image(asset, width: 100%)
   ]
 }
  
@@ -114,7 +115,7 @@
         if data.at("avatar", default: none) != none {
           render-avatar(data.avatar, colors.border, shape: data.at("avatar_shape", default: "round"), size: 40pt)
         } else if data.at("avatar_shape", default: "round") == "square" {
-          box(width: 40pt, height: 40pt, fill: colors.border)
+          box(width: 40pt, height: 40pt, fill: colors.border, radius: 4pt)
         } else {
           circle(radius: 20pt, fill: colors.border)
         },
@@ -123,7 +124,7 @@
           #stack(dir: ttb, spacing: 7pt,
             [
               #text(size: 15pt, weight: "bold", data.author)
-              #if data.at("verified", default: false) { h(2pt); verified-badge() }
+              #if data.at("verified", default: false) { h(2pt); verified-badge(kind: data.at("verification_type", default: "blue")) }
             ],
             [#if data.handle != "" { text(size: 15pt, fill: colors.text-dim, data.handle) }],
           )

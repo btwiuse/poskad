@@ -1,6 +1,6 @@
-# og2png web
+# Poskad
 
-一个免登录的 Go + HTMX 前端，用于调用现有的 `og2png.sh`。提交 URL 后，服务会显示实时日志并将成功结果保存为：
+一个免登录的 Go + HTMX 前端，用于调用 `poskad.sh`。提交 URL 后，服务会显示实时日志并将成功结果保存为：
 
 ```text
 output/<uuid-v7>/
@@ -24,10 +24,10 @@ go run ./cmd/poskad
 
 ## 卡片主题
 
-`og2png.sh` 使用单一模板，并可通过 `--theme` 选择一个或多个调色板；默认同时生成 `light,dark`：
+`poskad.sh` 使用单一模板，并可通过 `--theme` 选择一个或多个调色板；默认同时生成 `light,dark`：
 
 ```bash
-./og2png.sh --theme=light,dark https://x.com/example/status/123 output/card.png
+./poskad.sh --theme=light,dark https://x.com/example/status/123 output/card.png
 ```
 
 上述命令会生成 `output/card.light.png`、`output/card.dark.png` 及对应的无损
@@ -38,13 +38,13 @@ WebP 预览图，并让 `output/card.png` 指向浅色 PNG 以兼容现有调用
 
 - `PORT`：监听端口，默认 `8080`
 - `OUTPUT_DIR`：历史图片目录，默认 `output`
-- `OG2PNG_SCRIPT`：生成脚本路径，默认 `./og2png.sh`
+- `POSKAD_SCRIPT`：生成脚本路径，默认 `./poskad.sh`
 - `WORK_DIR`：脚本工作目录，默认当前目录
 
 例如：
 
 ```bash
-go run ./cmd/poskad --port 3000 --output-dir ./output --og2png-script ./og2png.sh --work-dir .
+go run ./cmd/poskad --port 3000 --output-dir ./output --poskad-script ./poskad.sh --work-dir .
 ```
 
 运行 `go run ./cmd/poskad --help` 可查看全部参数。命令行参数优先于环境变量，例如 `PORT=8080 go run ./cmd/poskad --port 3000` 会监听 `3000`。

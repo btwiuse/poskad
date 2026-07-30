@@ -19,12 +19,12 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 COPY --from=build /out/poskad /usr/local/bin/poskad
 COPY --from=build /out/ogpk /usr/local/bin/ogpk
-COPY og2png.sh og-card.typ verified.svg ./
-RUN chmod +x ./og2png.sh \
+COPY poskad.sh og-card.typ verified.svg verified-gold.svg ./
+RUN chmod +x ./poskad.sh \
     && mkdir -p /app/output \
     && fc-cache -f \
     && magick -version
-ENV PORT=8080 OUTPUT_DIR=/app/output OG2PNG_SCRIPT=/app/og2png.sh WORK_DIR=/app
+ENV PORT=8080 OUTPUT_DIR=/app/output POSKAD_SCRIPT=/app/poskad.sh WORK_DIR=/app
 EXPOSE 8080
 # The ImageMagick base image uses `convert` as its default entrypoint.
 ENTRYPOINT []

@@ -158,17 +158,38 @@ if [[ "$title" =~ ^(.*)[[:space:]]\(@([^\)]+)\)[[:space:]]on[[:space:]]X$ ]]; th
   handle="@${BASH_REMATCH[2]}"
 fi
 
-# OG metadata 不包含蓝标。对 X 帖子尽力查询公开 syndication 数据；查询失败
-# 只是不显示认证标记，绝不阻塞图片生成。
+# OG metadata 不包含认证类型。对 X 帖子和 profile 尽力查询公开 syndication
+# 数据；查询失败只是不显示认证标记，绝不阻塞图片生成。FxTwitter 将金标
+# 机构账号标记为 organization（部分上游也会使用 business/gold）。
 verified=false
+verification_type="blue"
+x_handle=""
+if [[ "$og_url" =~ ^https?://(www\.)?(x\.com|twitter\.com)/([[:alnum:]_]{1,15})(/|$) ]]; then
+  x_handle="${BASH_REMATCH[3]}"
+fi
 if [[ "$og_url" =~ ^https?://(www\.)?(x\.com|twitter\.com)/[^/]+/status/([0-9]+) ]]; then
   status_id="${BASH_REMATCH[3]}"
   echo "→ 查询 X 认证状态..."
   verification=$(curl -fsSL --max-time 8 "https://api.fxtwitter.com/status/${status_id}" \
-    | jq -r '.tweet.author.verification.verified // false' 2>/dev/null || true)
-  if [[ "$verification" == "true" ]]; then
-    verified=true
-  fi
+    || true)
+  verification_verified=$(jq -r '.tweet.author.verification.verified // false' <<< "$verification" 2>/dev/null || true)
+  verification_kind=$(jq -r '.tweet.author.verification.type // empty' <<< "$verification" 2>/dev/null || true)
+elif [[ -n "$x_handle" ]]; then
+  echo "→ 查询 X 认证状态..."
+  verification=$(curl -fsSL --max-time 8 "https://api.fxtwitter.com/2/profile/${x_handle}" \
+    || true)
+  verification_verified=$(jq -r '.user.verification.verified // false' <<< "$verification" 2>/dev/null || true)
+  verification_kind=$(jq -r '.user.verification.type // empty' <<< "$verification" 2>/dev/null || true)
+else
+  verification_verified=false
+  verification_kind=""
+fi
+if [[ "$verification_verified" == "true" ]]; then
+  verified=true
+  verification_kind=$(tr '[:upper:]' '[:lower:]' <<< "$verification_kind")
+  case "$verification_kind" in
+    organization|business|gold) verification_type="gold" ;;
+  esac
 fi
 
 # 根据运行环境选择已安装字体：本机使用 macOS 字体，容器使用 Noto。
@@ -263,6 +284,9 @@ fi
 
 avatar_path="null"
 avatar_shape="round"
+if [[ "$verification_type" == "gold" ]]; then
+  avatar_shape="square"
+fi
 post_image_path="null"
 if [ -n "$image_url" ] && [ "$image_url" != "null" ]; then
   if [[ "$is_x_url" == false && "$is_200_avatar" == false ]]; then
@@ -378,6 +402,7 @@ fi
 # ── 6. 准备 Typst 模板 ───────────────────────────────────────────────────────
 cp "$TEMPLATE_DIR/og-card.typ" "$WORK_DIR/"
 cp "$TEMPLATE_DIR/verified.svg" "$WORK_DIR/assets/verified.svg"
+cp "$TEMPLATE_DIR/verified-gold.svg" "$WORK_DIR/assets/verified-gold.svg"
  
 # ── 7. 构建 JSON 数据 ────────────────────────────────────────────────────────
 BASE_DATA=$(jq -n \
@@ -392,6 +417,7 @@ BASE_DATA=$(jq -n \
   --arg font_math "$font_math" \
   --arg font_emoji "$font_emoji" \
   --arg avatar_shape "$avatar_shape" \
+  --arg verification_type "$verification_type" \
   --argjson verified "$verified" \
   --argjson avatar "$avatar_path" \
   --argjson post_image "$post_image_path" \
@@ -407,6 +433,7 @@ BASE_DATA=$(jq -n \
     font_math: $font_math,
     font_emoji: $font_emoji,
     verified: $verified,
+    verification_type: $verification_type,
     avatar: $avatar,
     avatar_shape: $avatar_shape,
     post_image: $post_image
