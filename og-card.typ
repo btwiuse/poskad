@@ -12,6 +12,9 @@
   text-dim: rgb("#8b98a5"),
   border: rgb("#2f3336"),
   blue: rgb("#1d9bf0"),
+  brand: rgb("#ff4d00"),
+  brand-bg: rgb("#32170d"),
+  brand-border: rgb("#9c3c19"),
   qr-bg: rgb("#ffffff"),
 )
 
@@ -22,6 +25,9 @@
   text-dim: rgb("#536471"),
   border: rgb("#cfd9de"),
   blue: rgb("#1d9bf0"),
+  brand: rgb("#ff4d00"),
+  brand-bg: rgb("#fff0e8"),
+  brand-border: rgb("#ff9d78"),
   qr-bg: rgb("#ffffff"),
 )
  
@@ -66,6 +72,17 @@
   light-colors
 } else {
   dark-colors
+}
+
+#let poskad-logo() = {
+  box(
+    fill: colors.brand-bg,
+    stroke: 0.5pt + colors.brand-border,
+    radius: 999pt,
+    inset: (x: 5pt, y: 2pt),
+  )[
+    #text(font: data.font_math, size: 9pt, fill: colors.brand, "ℙ𝕠𝕤𝕜𝕒𝕕")
+  ]
 }
  
 // ── 页面设置 ─────────────────────────────────────────────────────────────────
@@ -134,8 +151,13 @@
             #place(top + left, dy: 12pt)[
               #text(size: 11pt, fill: colors.text-dim, "Scan the QR code for the original post")
             ]
-            #place(bottom + left, dy: -12pt)[
+            #place(horizon + left)[
               #text(size: 9pt, fill: colors.text-dim, data.url)
+            ]
+            #place(bottom + left, dy: -12pt)[
+              #text(size: 9pt, fill: colors.text-dim, "Made with")
+              #h(3pt)
+              #poskad-logo()
             ]
           ]
         ],
