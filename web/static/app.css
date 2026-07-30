@@ -34,7 +34,7 @@ body { margin: 0; background: radial-gradient(70% 40% at 50% 0%, var(--hero-glow
 a { color: inherit; }
 .shell { position: relative; width: min(1180px, calc(100% - 32px)); margin: 0 auto; padding: 76px 0 96px; }
 .hero { max-width: 700px; margin: 0 auto 42px; text-align: center; }
-.eyebrow { background: color-mix(in srgb, var(--accent) 12%, var(--surface)); border: 1px solid color-mix(in srgb, var(--accent) 42%, var(--line)); border-radius: 999px; color: var(--accent); display: table; font-size: .72rem; font-weight: 800; letter-spacing: .16em; margin: 0 auto 16px; padding: 5px 10px 4px 12px; }
+.eyebrow { background: color-mix(in srgb, var(--accent) 12%, var(--surface)); border: 1px solid color-mix(in srgb, var(--accent) 42%, var(--line)); border-radius: 999px; color: var(--accent); display: table; font-family: "STIX Two Math", "Cambria Math", serif; font-size: .92rem; font-weight: 400; letter-spacing: 0; line-height: 1; margin: 0 auto 16px; padding: 5px 8px; }
 .theme-toggle { align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; color: var(--text); display: inline-flex; gap: 7px; min-height: 36px; padding: 0 12px; position: absolute; right: 0; top: 28px; }
 .theme-toggle:hover { background: var(--surface-2); filter: none; }
 .theme-toggle span[aria-hidden="true"] { font-size: 1.1rem; line-height: 1; }
