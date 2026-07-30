@@ -19,18 +19,20 @@ func TestCardOOBPreservesCardWrapper(t *testing.T) {
 		t.Fatal(err)
 	}
 	item := historyItem{
-		ID:            "019fad39-0000-7000-8000-000000000000",
-		URL:           "https://example.com",
-		ImageURL:      "/media/test/image.png",
-		LightImageURL: "/media/test/image.light.png",
-		DarkImageURL:  "/media/test/image.dark.png",
+		ID:                   "019fad39-0000-7000-8000-000000000000",
+		URL:                  "https://example.com",
+		ImageURL:             "/media/test/image.png",
+		LightImageURL:        "/media/test/image.light.png",
+		DarkImageURL:         "/media/test/image.dark.png",
+		LightPreviewImageURL: "/media/test/image.light.webp",
+		DarkPreviewImageURL:  "/media/test/image.dark.webp",
 	}
 	var output bytes.Buffer
 	if err := templates.ExecuteTemplate(&output, "card-oob", item); err != nil {
 		t.Fatal(err)
 	}
 	got := output.String()
-	if !strings.Contains(got, `hx-swap-oob="afterbegin:#gallery"`) || !strings.Contains(got, `class="card"`) || !strings.Contains(got, `data-light-image="/media/test/image.light.png"`) {
+	if !strings.Contains(got, `hx-swap-oob="afterbegin:#gallery"`) || !strings.Contains(got, `class="card"`) || !strings.Contains(got, `data-light-image="/media/test/image.light.png"`) || !strings.Contains(got, `data-light-preview-image="/media/test/image.light.webp"`) {
 		t.Fatalf("card-oob must insert a full card, got %q", got)
 	}
 }
@@ -199,5 +201,50 @@ func TestHistoryItemUsesThemeImagesWithLegacyFallback(t *testing.T) {
 	item, ok := a.historyItem(id)
 	if !ok || item.LightImageURL != "/media/"+id+"/image.light.png" || item.DarkImageURL != "/media/"+id+"/image.dark.png" {
 		t.Fatalf("theme history item = %#v", item)
+	}
+	if item.LightPreviewImageURL != item.LightImageURL || item.DarkPreviewImageURL != item.DarkImageURL {
+		t.Fatalf("PNG fallback previews = %#v", item)
+	}
+	for _, name := range []string{"image.light.webp", "image.dark.webp"} {
+		if err := os.WriteFile(filepath.Join(dir, name), []byte("webp"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	item, ok = a.historyItem(id)
+	if !ok || item.LightPreviewImageURL != "/media/"+id+"/image.light.webp" || item.DarkPreviewImageURL != "/media/"+id+"/image.dark.webp" {
+		t.Fatalf("WebP history previews = %#v", item)
+	}
+}
+
+func TestValidImageNameAcceptsGeneratedWebPPreviews(t *testing.T) {
+	for _, name := range []string{"image.png", "image.light.png", "image.dark.png", "image.light.webp", "image.dark.webp"} {
+		if !validImageName(name) {
+			t.Fatalf("validImageName(%q) = false", name)
+		}
+	}
+	if validImageName("image.webp") {
+		t.Fatal("legacy WebP filename must not be served")
+	}
+}
+
+func TestMediaServesWebPPreview(t *testing.T) {
+	root := t.TempDir()
+	const id = "019fad39-0000-7000-8000-000000000000"
+	dir := filepath.Join(root, id)
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "image.light.webp"), []byte("webp"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	a := &app{outputDir: root}
+	response := httptest.NewRecorder()
+	a.handleMedia(response, httptest.NewRequest(http.MethodGet, "/media/"+id+"/image.light.webp", nil))
+	if got, want := response.Code, http.StatusOK; got != want {
+		t.Fatalf("status = %d, want %d", got, want)
+	}
+	if got, want := response.Header().Get("Content-Type"), "image/webp"; got != want {
+		t.Fatalf("Content-Type = %q, want %q", got, want)
 	}
 }

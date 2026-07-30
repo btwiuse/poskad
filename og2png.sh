@@ -431,6 +431,14 @@ for theme in "${THEMES[@]}"; do
   # Typst 会保留 Alpha 通道；导出的分享图使用不透明 RGB PNG，避免透明边缘。
   magick "$WORK_DIR/output-${theme}.png" -alpha off "$theme_output"
   echo "✓ 已生成: $theme_output"
+  # 网页预览使用无损 WebP，减少流量但不牺牲文字与二维码的清晰度。若运行环境
+  # 没有 WebP delegate，PNG 仍是完整且可用的回退产物。
+  theme_webp_output="${output_base}.${theme}.webp"
+  if magick "$theme_output" -define webp:lossless=true -quality 100 -define webp:method=6 "$theme_webp_output"; then
+    echo "✓ 已生成: $theme_webp_output"
+  else
+    echo "  ⚠ 无法生成 WebP 预览，网页将回退使用 PNG" >&2
+  fi
 done
 
 # Legacy consumers still request image.png. Prefer the light result, which is

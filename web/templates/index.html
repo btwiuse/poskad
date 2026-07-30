@@ -91,8 +91,8 @@
 
 {{define "card"}}
 <article class="card" id="card-{{.ID}}">
-  <button type="button" class="image-link" data-modal-open data-id="{{.ID}}" data-image="{{.ImageURL}}" data-light-image="{{.LightImageURL}}" data-dark-image="{{.DarkImageURL}}" data-source="{{.URL}}" aria-label="预览生成图片">
-    <img src="{{.ImageURL}}" alt="由 {{.URL}} 生成的 OG 卡片" loading="lazy">
+  <button type="button" class="image-link" data-modal-open data-id="{{.ID}}" data-image="{{.ImageURL}}" data-light-image="{{.LightImageURL}}" data-dark-image="{{.DarkImageURL}}" data-preview-image="{{.PreviewImageURL}}" data-light-preview-image="{{.LightPreviewImageURL}}" data-dark-preview-image="{{.DarkPreviewImageURL}}" data-source="{{.URL}}" aria-label="预览生成图片">
+    <img src="{{.LightPreviewImageURL}}" alt="由 {{.URL}} 生成的 OG 卡片" loading="lazy">
   </button>
 </article>
 {{end}}
@@ -111,7 +111,7 @@
   </div>
   {{if ne .Status "succeeded"}}<pre>{{.LogText}}</pre>{{end}}
   {{if eq .Status "succeeded"}}
-    {{with .Item}}<div class="job-result" data-image="{{.ImageURL}}" data-light-image="{{.LightImageURL}}" data-dark-image="{{.DarkImageURL}}" data-source="{{.URL}}"><button type="button" class="job-preview" data-modal-open data-id="{{.ID}}" data-image="{{.ImageURL}}" data-light-image="{{.LightImageURL}}" data-dark-image="{{.DarkImageURL}}" data-source="{{.URL}}" aria-label="预览新生成的图片"><img src="{{.ImageURL}}" alt="新生成的 OG 卡片"></button><div class="job-actions"><a class="job-action" data-job-download download href="{{.ImageURL}}"><span aria-hidden="true">↓</span> 下载 PNG</a><button type="button" class="job-action" data-job-share><span aria-hidden="true">↗</span> 分享图片</button><button type="button" class="job-action" data-job-copy-source><span aria-hidden="true">⧉</span> 复制原文链接</button></div></div>{{end}}
+    {{with .Item}}<div class="job-result" data-image="{{.ImageURL}}" data-light-image="{{.LightImageURL}}" data-dark-image="{{.DarkImageURL}}" data-preview-image="{{.PreviewImageURL}}" data-light-preview-image="{{.LightPreviewImageURL}}" data-dark-preview-image="{{.DarkPreviewImageURL}}" data-source="{{.URL}}"><button type="button" class="job-preview" data-modal-open data-id="{{.ID}}" data-image="{{.ImageURL}}" data-light-image="{{.LightImageURL}}" data-dark-image="{{.DarkImageURL}}" data-preview-image="{{.PreviewImageURL}}" data-light-preview-image="{{.LightPreviewImageURL}}" data-dark-preview-image="{{.DarkPreviewImageURL}}" data-source="{{.URL}}" aria-label="预览新生成的图片"><img src="{{.LightPreviewImageURL}}" alt="新生成的 OG 卡片"></button><div class="job-actions"><a class="job-action" data-job-download download href="{{.LightImageURL}}"><span aria-hidden="true">↓</span> 下载 PNG</a><button type="button" class="job-action" data-job-share><span aria-hidden="true">↗</span> 分享图片</button><button type="button" class="job-action" data-job-copy-source><span aria-hidden="true">⧉</span> 复制原文链接</button></div></div>{{end}}
   {{end}}
 </section>
 {{end}}

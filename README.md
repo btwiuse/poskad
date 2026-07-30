@@ -5,6 +5,10 @@
 ```text
 output/<uuid-v7>/
 ├── image.png
+├── image.light.png
+├── image.dark.png
+├── image.light.webp
+├── image.dark.webp
 └── src.url
 ```
 
@@ -26,9 +30,9 @@ go run ./cmd/poskad
 ./og2png.sh --theme=light,dark https://x.com/example/status/123 output/card.png
 ```
 
-上述命令会生成 `output/card.light.png`、`output/card.dark.png`，并让
-`output/card.png` 指向浅色图以兼容现有调用方。网页生成同样始终生成两种主题，
-再依照当前页面主题显示对应图片。
+上述命令会生成 `output/card.light.png`、`output/card.dark.png` 及对应的无损
+WebP 预览图，并让 `output/card.png` 指向浅色 PNG 以兼容现有调用方。网页生成
+同样始终生成两种主题：页面预览优先使用 WebP，下载与系统分享始终使用 PNG。
 
 可选环境变量（也都可由同名语义的命令行参数覆盖）：
 

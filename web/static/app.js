@@ -26,10 +26,9 @@
       : '<span aria-hidden="true">☼</span><span class="theme-toggle-label">Light</span>';
     document.querySelector('meta[name="theme-color"]').content = isLight ? '#f7f9f9' : '#09090b';
     document.querySelectorAll('[data-modal-open]').forEach((opener) => {
-      const image = imageForTheme(opener.dataset, theme);
-      opener.dataset.image = image;
+      const previewImage = previewImageForTheme(opener.dataset, theme);
       const preview = opener.querySelector('img');
-      if (preview) preview.src = image;
+      if (preview) preview.src = previewImage;
     });
     document.querySelectorAll('.job-result[data-image]').forEach((result) => {
       const image = imageForTheme(result.dataset, theme);
@@ -37,7 +36,10 @@
       result.querySelector('[data-job-download]').href = image;
     });
     if (currentOpener) {
-      setModalImage(imageForTheme(currentOpener.dataset, theme));
+      setModalImage(
+        previewImageForTheme(currentOpener.dataset, theme),
+        imageForTheme(currentOpener.dataset, theme),
+      );
     }
   }
 
@@ -45,9 +47,16 @@
     return theme === 'light' ? (data.lightImage || data.image) : (data.darkImage || data.image);
   }
 
-  function setModalImage(image) {
-    modalImage.src = image;
-    download.href = image;
+  function previewImageForTheme(data, theme = document.documentElement.dataset.theme) {
+    if (theme === 'light') {
+      return data.lightPreviewImage || data.lightImage || data.previewImage || data.image;
+    }
+    return data.darkPreviewImage || data.darkImage || data.previewImage || data.image;
+  }
+
+  function setModalImage(previewImage, pngImage) {
+    modalImage.src = previewImage;
+    download.href = pngImage;
   }
 
   const storedTheme = localStorage.getItem('poskad-theme');
@@ -179,7 +188,7 @@
   });
 
   async function shareCurrentImage() {
-    await shareImage(modalImage.src);
+    await shareImage(download.href);
   }
 
   async function shareImage(imageURL) {
@@ -214,7 +223,10 @@
 
   function openModal(opener, syncHash = true) {
     currentOpener = opener;
-    setModalImage(imageForTheme(opener.dataset));
+    setModalImage(
+      previewImageForTheme(opener.dataset),
+      imageForTheme(opener.dataset),
+    );
     currentSourceURL = opener.dataset.source;
     openSource.href = currentSourceURL;
     if (syncHash && opener.dataset.id) {
@@ -294,7 +306,16 @@
       const response = await fetch(`/items/${id}`);
       if (!response.ok) return;
       const item = await response.json();
-      openModal({ dataset: { id: item.id, image: item.image_url, lightImage: item.light_image_url, darkImage: item.dark_image_url, source: item.url } }, false);
+      openModal({ dataset: {
+        id: item.id,
+        image: item.image_url,
+        lightImage: item.light_image_url,
+        darkImage: item.dark_image_url,
+        previewImage: item.preview_image_url,
+        lightPreviewImage: item.light_preview_image_url,
+        darkPreviewImage: item.dark_preview_image_url,
+        source: item.url,
+      } }, false);
     } catch (_) {
       notify('未找到该图片。');
     }
