@@ -91,6 +91,28 @@ if [ -z "$og_url" ] || [ "$og_url" = "null" ]; then
   og_url="$URL"
 fi
 
+# 原链接仍用于二维码和分享；仅将卡片上的可见文本进行百分号解码，提升非 ASCII
+# 路径的可读性，例如 /wiki/%E6%89%BF%E6%93%94%E7%89%B9%E8%B3%AA。
+url_decode_for_display() {
+  local remaining="$1"
+  local decoded=""
+  local hex character
+
+  while [[ -n "$remaining" ]]; do
+    if [[ "$remaining" =~ ^%([[:xdigit:]]{2}) ]]; then
+      hex="${BASH_REMATCH[1]}"
+      printf -v character '%b' "\\x$hex"
+      decoded+="$character"
+      remaining="${remaining:3}"
+    else
+      decoded+="${remaining:0:1}"
+      remaining="${remaining:1}"
+    fi
+  done
+  printf '%s' "$decoded"
+}
+display_url=$(url_decode_for_display "$og_url")
+
 # 将 description 里的 t.co 短链替换成最终地址，便于图片阅读。PNG 无法承载
 # 可点击的超链接，故使用最终地址作为可见文本；http:// 前缀按约定移除。
 expand_tco_links() {
@@ -251,7 +273,7 @@ BASE_DATA=$(jq -n \
   --arg handle "$handle" \
   --arg description "$desc" \
   --arg site_name "$site_name" \
-  --arg url "$og_url" \
+  --arg url "$display_url" \
   --arg font_sans "$font_sans" \
   --arg font_cjk "$font_cjk" \
   --arg font_math "$font_math" \
