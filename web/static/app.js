@@ -12,7 +12,6 @@
   const themeToggle = document.querySelector('#theme-toggle');
   const themeInput = document.querySelector('#card-theme');
   let busy = false;
-  let loadingHistory = false;
   let toastTimer;
   let currentOpener = null;
   const uuidV7Pattern = /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
@@ -171,40 +170,20 @@
 
   function updateModalNavigation() {
     const openers = modalOpeners();
-    const canNavigate = openers.length > 1 && openers.includes(currentOpener);
-    previousButton.disabled = !canNavigate;
-    nextButton.disabled = !canNavigate;
+    const index = openers.indexOf(currentOpener);
+    previousButton.disabled = index <= 0;
+    nextButton.disabled = index < 0 || index >= openers.length - 1;
   }
 
   function navigateModal(direction) {
     const openers = modalOpeners();
     const index = openers.indexOf(currentOpener);
-    if (index < 0 || openers.length < 2) return;
-    openModal(openers[(index + direction + openers.length) % openers.length]);
+    const destination = index + direction;
+    if (index < 0 || destination < 0 || destination >= openers.length) return;
+    openModal(openers[destination]);
   }
 
-  async function loadRemainingHistory() {
-    if (loadingHistory) return;
-    loadingHistory = true;
-    try {
-      let sentinel = gallery.querySelector('.history-sentinel');
-      while (sentinel) {
-        // Prevent the intersection observer from issuing a duplicate request.
-        sentinel.removeAttribute('hx-trigger');
-        const response = await fetch(sentinel.getAttribute('hx-get'));
-        if (!response.ok) throw new Error('history request failed');
-        sentinel.outerHTML = await response.text();
-        scheduleMasonry();
-        sentinel = gallery.querySelector('.history-sentinel');
-      }
-    } catch (_) {
-      notify('加载更多图片失败。');
-    } finally {
-      loadingHistory = false;
-    }
-  }
-
-  document.addEventListener('keydown', async (event) => {
+  document.addEventListener('keydown', (event) => {
     if (!modal.open || event.metaKey || event.ctrlKey || event.altKey) return;
     if (event.key === 'ArrowLeft' || event.key === 'k') {
       event.preventDefault();
@@ -227,7 +206,6 @@
       if (first) openModal(first);
     } else if (event.key === 'G') {
       event.preventDefault();
-      await loadRemainingHistory();
       const openers = modalOpeners();
       const last = openers[openers.length - 1];
       if (last) openModal(last);
