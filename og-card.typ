@@ -165,7 +165,7 @@
             ]
             #place(bottom + left, dy: -12pt)[
               #text(size: 9pt, fill: colors.text-dim, "Made with")
-              #h(3pt)
+              #h(1pt)
               #poskad-logo()
             ]
           ]
