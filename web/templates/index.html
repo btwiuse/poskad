@@ -111,7 +111,7 @@
   </div>
   <pre>{{.LogText}}</pre>
   {{if eq .Status "succeeded"}}
-    {{with .Item}}<button type="button" class="job-result" data-modal-open data-id="{{.ID}}" data-image="{{.ImageURL}}" data-light-image="{{.LightImageURL}}" data-dark-image="{{.DarkImageURL}}" data-source="{{.URL}}"><img src="{{.ImageURL}}" alt="新生成的 OG 卡片">点击预览与下载</button>{{end}}
+    {{with .Item}}<button type="button" class="job-result" data-modal-open data-id="{{.ID}}" data-image="{{.ImageURL}}" data-light-image="{{.LightImageURL}}" data-dark-image="{{.DarkImageURL}}" data-source="{{.URL}}"><img src="{{.ImageURL}}" alt="新生成的 OG 卡片"><span>预览图片 <span aria-hidden="true">↗</span></span></button>{{end}}
   {{end}}
 </section>
 {{end}}

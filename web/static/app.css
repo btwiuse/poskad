@@ -74,9 +74,10 @@ button:disabled { background: #3d3d43; color: #9b9ba1; cursor: not-allowed; filt
 .job-panel pre { background: var(--log); border-bottom: 1px solid var(--line); border-top: 1px solid var(--line); color: var(--muted); font: .76rem/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; margin: 0; max-height: 270px; overflow: auto; padding: 13px 15px; white-space: pre-wrap; word-break: break-word; }
 .spinner { animation: spin 900ms linear infinite; border: 2px solid #ffffff35; border-top-color: var(--accent); border-radius: 50%; height: 16px; width: 16px; }
 @keyframes spin { to { transform: rotate(360deg); } }
-.job-result { align-items: center; background: transparent; border-radius: 0; color: var(--text); display: flex; gap: 12px; padding: 14px 15px; text-align: left; text-decoration: none; width: 100%; }
+.job-result { background: transparent; border-radius: 0; color: var(--text); display: block; padding: 0; text-align: left; text-decoration: none; width: 100%; }
 .job-result:hover { background: var(--surface-2); filter: none; }
-.job-result img { border-radius: 8px; max-height: 100px; max-width: 145px; }
+.job-result img { display: block; height: auto; max-height: none; max-width: none; width: 100%; }
+.job-result > span { align-items: center; color: var(--text); display: flex; font-size: .9rem; font-weight: 800; justify-content: center; min-height: 48px; }
 .history-heading { align-items: baseline; display: flex; justify-content: space-between; margin-bottom: 16px; }
 h2 { font-size: 1.2rem; letter-spacing: -.02em; margin: 0; }
 .history-heading span { color: var(--muted); font-size: .8rem; }
