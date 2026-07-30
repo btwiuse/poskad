@@ -57,7 +57,7 @@ a { color: inherit; }
 h1 { font-size: clamp(2.6rem, 7vw, 5.7rem); line-height: .91; margin: 0; }
 .headline-phrase { display: inline-block; white-space: nowrap; }
 .hero > p:last-child { color: var(--muted); margin: 24px auto 0; max-width: 470px; }
-.composer { background: color-mix(in srgb, var(--surface) 92%, transparent); border: 1px solid var(--line); border-radius: 18px; margin: 0 auto 18px; max-width: 780px; padding: 18px; box-shadow: 0 24px 80px #0006; }
+.composer { background: color-mix(in srgb, var(--surface) 92%, transparent); border: 1px solid var(--line); border-radius: 18px; margin: 0 auto 18px; max-width: 960px; padding: 18px; box-shadow: 0 24px 80px #0006; }
 label { display: block; color: var(--muted); font-size: .78rem; font-weight: 700; margin: 0 0 8px; }
 .url-row { display: flex; gap: 10px; }
 input { background: var(--input); border: 1px solid var(--line); border-radius: 10px; color: var(--text); flex: 1; font: inherit; min-width: 0; outline: none; padding: 13px 14px; }
@@ -66,7 +66,7 @@ button { background: var(--accent); border: 0; border-radius: 10px; color: var(-
 button:hover { filter: brightness(1.08); }
 button:disabled { background: #3d3d43; color: #9b9ba1; cursor: not-allowed; filter: none; }
 .hint { color: var(--muted); font-size: .78rem; margin: 10px 0 0; }
-.job-panel { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; margin: 0 auto 42px; max-width: 780px; overflow: hidden; }
+.job-panel { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; margin: 0 auto 42px; max-width: 960px; overflow: hidden; }
 .job-panel:empty { display: none; }
 .job-panel.succeeded { border-color: #27653a; }
 .job-panel.failed { border-color: #7d3333; }
