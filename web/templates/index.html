@@ -109,7 +109,7 @@
     <span>{{if eq .Status "queued"}}排队中{{else if eq .Status "running"}}正在生成{{else if eq .Status "succeeded"}}生成完成{{else}}生成失败{{end}}</span>
     {{if or (eq .Status "queued") (eq .Status "running")}}<span class="spinner" aria-label="处理中"></span>{{end}}
   </div>
-  <pre>{{.LogText}}</pre>
+  {{if ne .Status "succeeded"}}<pre>{{.LogText}}</pre>{{end}}
   {{if eq .Status "succeeded"}}
     {{with .Item}}<button type="button" class="job-result" data-modal-open data-id="{{.ID}}" data-image="{{.ImageURL}}" data-light-image="{{.LightImageURL}}" data-dark-image="{{.DarkImageURL}}" data-source="{{.URL}}"><img src="{{.ImageURL}}" alt="新生成的 OG 卡片"><span>预览图片 <span aria-hidden="true">↗</span></span></button>{{end}}
   {{end}}
