@@ -5,6 +5,7 @@
   const modal = document.querySelector('#image-modal');
   const modalImage = document.querySelector('#modal-image');
   const download = document.querySelector('#modal-download');
+  const openSource = document.querySelector('#modal-open-source');
   const previousButton = document.querySelector('[data-modal-prev]');
   const nextButton = document.querySelector('[data-modal-next]');
   const gallery = document.querySelector('#gallery');
@@ -215,6 +216,7 @@
     currentOpener = opener;
     setModalImage(imageForTheme(opener.dataset));
     currentSourceURL = opener.dataset.source;
+    openSource.href = currentSourceURL;
     if (syncHash && opener.dataset.id) {
       history.replaceState(null, '', `${location.pathname}${location.search}#${opener.dataset.id}`);
     }

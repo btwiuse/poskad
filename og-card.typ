@@ -54,12 +54,12 @@
 #let render-avatar(path, border, shape: "round", size: 48pt) = {
   if shape == "square" {
     box(
-      clip: true,
+      clip: true, stroke: 0.6pt + border,
       image(path, width: size, height: size)
     )
   } else {
     box(
-      clip: true, radius: 50%,
+      clip: true, radius: 50%, stroke: 0.6pt + border,
       box(clip: true, radius: 50%, image(path, width: size))
     )
   }
