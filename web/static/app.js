@@ -156,6 +156,10 @@
     }
     if (event.target.closest('[data-copy-image]')) {
       await copyCurrentImage();
+      return;
+    }
+    if (event.target.closest('[data-share-image]')) {
+      await shareCurrentImage();
     }
   });
 
@@ -172,6 +176,26 @@
       } catch (_) {
         notify('浏览器未授予剪贴板权限，请使用下载按钮。');
       }
+    }
+  }
+
+  async function shareCurrentImage() {
+    if (!navigator.share || !navigator.canShare) {
+      notify('当前浏览器不支持分享图片。');
+      return;
+    }
+    try {
+      const response = await fetch(modalImage.src);
+      const blob = await response.blob();
+      const file = new File([blob], 'poskad.png', { type: blob.type || 'image/png' });
+      const shareData = { files: [file] };
+      if (!navigator.canShare(shareData)) {
+        notify('当前浏览器不支持分享图片。');
+        return;
+      }
+      await navigator.share(shareData);
+    } catch (error) {
+      if (error?.name !== 'AbortError') notify('无法发起图片分享。');
     }
   }
 
