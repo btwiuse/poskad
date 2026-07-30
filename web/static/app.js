@@ -5,7 +5,6 @@
   const modal = document.querySelector('#image-modal');
   const modalImage = document.querySelector('#modal-image');
   const download = document.querySelector('#modal-download');
-  const source = document.querySelector('#modal-source');
   const previousButton = document.querySelector('[data-modal-prev]');
   const nextButton = document.querySelector('[data-modal-next]');
   const gallery = document.querySelector('#gallery');
@@ -13,6 +12,7 @@
   let busy = false;
   let toastTimer;
   let currentOpener = null;
+  let currentSourceURL = '';
   const uuidV7Pattern = /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 
   function applyTheme(theme) {
@@ -159,12 +159,12 @@
       navigateModal(1);
       return;
     }
-    if (event.target.closest('[data-copy-image]')) {
-      await copyCurrentImage();
-      return;
-    }
     if (event.target.closest('[data-share-image]')) {
       await shareCurrentImage();
+      return;
+    }
+    if (event.target.closest('[data-copy-source]')) {
+      await copySourceURL(currentSourceURL);
       return;
     }
     const jobResult = event.target.closest('.job-result');
@@ -176,22 +176,6 @@
       await copySourceURL(jobResult.dataset.source);
     }
   });
-
-  async function copyCurrentImage() {
-    try {
-      const response = await fetch(modalImage.src);
-      const blob = await response.blob();
-      await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
-      notify('图片已复制到剪贴板。');
-    } catch (_) {
-      try {
-        await navigator.clipboard.writeText(modalImage.src);
-        notify('浏览器不支持复制图片，已复制图片链接。');
-      } catch (_) {
-        notify('浏览器未授予剪贴板权限，请使用下载按钮。');
-      }
-    }
-  }
 
   async function shareCurrentImage() {
     await shareImage(modalImage.src);
@@ -218,6 +202,7 @@
   }
 
   async function copySourceURL(sourceURL) {
+    if (!sourceURL) return;
     try {
       await navigator.clipboard.writeText(sourceURL);
       notify('原文链接已复制到剪贴板。');
@@ -229,7 +214,7 @@
   function openModal(opener, syncHash = true) {
     currentOpener = opener;
     setModalImage(imageForTheme(opener.dataset));
-    source.href = opener.dataset.source;
+    currentSourceURL = opener.dataset.source;
     if (syncHash && opener.dataset.id) {
       history.replaceState(null, '', `${location.pathname}${location.search}#${opener.dataset.id}`);
     }
@@ -266,13 +251,13 @@
       navigateModal(1);
     } else if (event.key === 'c') {
       event.preventDefault();
-      copyCurrentImage();
+      copySourceURL(currentSourceURL);
     } else if (event.key === 'd') {
       event.preventDefault();
       download.click();
     } else if (event.key === 'o') {
       event.preventDefault();
-      source.click();
+      if (currentSourceURL) window.open(currentSourceURL, '_blank', 'noopener,noreferrer');
     } else if (event.key === 'g') {
       event.preventDefault();
       const first = modalOpeners()[0];
@@ -291,6 +276,7 @@
 
   modal.addEventListener('close', () => {
     currentOpener = null;
+    currentSourceURL = '';
     if (location.hash) history.replaceState(null, '', `${location.pathname}${location.search}`);
   });
 
