@@ -78,6 +78,9 @@
   // A Web Share Target redirects here with the received URL prefilled.
   // Submit it through the same guarded htmx flow as a manually pasted link.
   if (form.querySelector('[data-share-url]')) {
+    const cleanURL = new URL(location.href);
+    cleanURL.searchParams.delete('share');
+    history.replaceState(null, '', `${cleanURL.pathname}${cleanURL.search}${cleanURL.hash}`);
     requestAnimationFrame(() => form.requestSubmit());
   }
 
