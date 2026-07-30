@@ -132,12 +132,8 @@
         box(width: 100%, clip: true, radius: 10pt)[
           #image(data.post_image, width: 100%)
         ]
-        v(10pt)
-      } else {
-        v(12pt)
-        line(length: 100%, stroke: 0.5pt + colors.border)
-        v(10pt)
       }
+      v(8pt)
       // 页脚在内容下方正常流式排版：正文再长也不会与二维码重叠。
       #table(
         columns: (auto, 1fr),
