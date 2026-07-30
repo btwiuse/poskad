@@ -59,7 +59,6 @@ type job struct {
 	mu        sync.RWMutex
 	id        string
 	url       string
-	theme     string
 	status    string
 	logs      []string
 	createdAt time.Time
@@ -67,9 +66,11 @@ type job struct {
 }
 
 type historyItem struct {
-	ID       string `json:"id"`
-	URL      string `json:"url"`
-	ImageURL string `json:"image_url"`
+	ID            string `json:"id"`
+	URL           string `json:"url"`
+	ImageURL      string `json:"image_url"`
+	LightImageURL string `json:"light_image_url"`
+	DarkImageURL  string `json:"dark_image_url"`
 }
 
 type historyPage struct {
@@ -238,9 +239,7 @@ func (a *app) handleGenerate(w http.ResponseWriter, r *http.Request) {
 		a.renderErrorPanel(w, "请输入有效的 http:// 或 https:// 链接")
 		return
 	}
-	theme := cardTheme(r.Form.Get("theme"))
-
-	j := &job{id: uuidV7(), url: rawURL, theme: theme, status: "queued", createdAt: time.Now()}
+	j := &job{id: uuidV7(), url: rawURL, status: "queued", createdAt: time.Now()}
 	j.appendLog("任务已创建，等待生成器启动…")
 	a.jobsMu.Lock()
 	a.jobs[j.id] = j
@@ -270,11 +269,11 @@ func (a *app) handleJob(w http.ResponseWriter, r *http.Request) {
 
 func (a *app) handleMedia(w http.ResponseWriter, r *http.Request) {
 	parts := strings.Split(strings.TrimPrefix(r.URL.Path, "/media/"), "/")
-	if len(parts) != 2 || parts[1] != "image.png" || !isUUIDv7(parts[0]) {
+	if len(parts) != 2 || !isUUIDv7(parts[0]) || !validImageName(parts[1]) {
 		http.NotFound(w, r)
 		return
 	}
-	path := filepath.Join(a.outputDir, parts[0], "image.png")
+	path := filepath.Join(a.outputDir, parts[0], parts[1])
 	if _, err := os.Stat(path); err != nil {
 		http.NotFound(w, r)
 		return
@@ -302,7 +301,7 @@ func (a *app) runJob(j *job) {
 	}
 
 	imagePath := filepath.Join(dir, "image.png")
-	cmd := exec.Command(a.script, "--theme", j.theme, j.url, imagePath)
+	cmd := exec.Command(a.script, "--theme=light,dark", j.url, imagePath)
 	cmd.Dir = a.workDir
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
@@ -329,11 +328,21 @@ func (a *app) runJob(j *job) {
 		j.fail(fmt.Sprintf("生成失败: %v", err))
 		return
 	}
-	if _, err := os.Stat(imagePath); err != nil {
-		j.fail("生成器没有产出 image.png")
+	if _, err := os.Stat(filepath.Join(dir, "image.light.png")); err != nil {
+		j.fail("生成器没有产出 image.light.png")
 		return
 	}
-	j.succeed(historyItem{ID: j.id, URL: j.url, ImageURL: "/media/" + j.id + "/image.png"})
+	if _, err := os.Stat(filepath.Join(dir, "image.dark.png")); err != nil {
+		j.fail("生成器没有产出 image.dark.png")
+		return
+	}
+	j.succeed(historyItem{
+		ID:            j.id,
+		URL:           j.url,
+		ImageURL:      "/media/" + j.id + "/image.png",
+		LightImageURL: "/media/" + j.id + "/image.light.png",
+		DarkImageURL:  "/media/" + j.id + "/image.dark.png",
+	})
 }
 
 func streamLogs(wg *sync.WaitGroup, r interface{ Read([]byte) (int, error) }, j *job) {
@@ -400,7 +409,20 @@ func (a *app) historyItem(id string) (historyItem, bool) {
 	if !validSourceURL(itemURL) {
 		return historyItem{}, false
 	}
-	return historyItem{ID: id, URL: itemURL, ImageURL: "/media/" + id + "/image.png"}, true
+	item := historyItem{
+		ID:            id,
+		URL:           itemURL,
+		ImageURL:      "/media/" + id + "/image.png",
+		LightImageURL: "/media/" + id + "/image.light.png",
+		DarkImageURL:  "/media/" + id + "/image.dark.png",
+	}
+	if _, err := os.Stat(filepath.Join(dir, "image.light.png")); err != nil {
+		item.LightImageURL = item.ImageURL
+	}
+	if _, err := os.Stat(filepath.Join(dir, "image.dark.png")); err != nil {
+		item.DarkImageURL = item.ImageURL
+	}
+	return item, true
 }
 
 func (a *app) renderJob(w http.ResponseWriter, j *job) {
@@ -460,11 +482,8 @@ func validSourceURL(raw string) bool {
 	return err == nil && (u.Scheme == "http" || u.Scheme == "https") && u.Host != ""
 }
 
-func cardTheme(raw string) string {
-	if raw == "light" {
-		return "light"
-	}
-	return "dark"
+func validImageName(name string) bool {
+	return name == "image.png" || name == "image.light.png" || name == "image.dark.png"
 }
 
 // sharedSourceURL accepts an existing share redirect first, then the explicit

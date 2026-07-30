@@ -41,7 +41,6 @@
 
       <section class="composer" aria-label="生成图片">
         <form id="generator-form" hx-post="/generate" hx-target="#job-panel" hx-swap="outerHTML">
-          <input id="card-theme" name="theme" type="hidden" value="dark">
           <label for="url">原文链接</label>
           <div class="url-row">
             <input id="url" name="url" type="url" placeholder="https://x.com/..." autocomplete="url" value="{{.ShareURL}}" {{if .ShareURL}}data-share-url="{{.ShareURL}}"{{end}} required>
@@ -92,7 +91,7 @@
 
 {{define "card"}}
 <article class="card" id="card-{{.ID}}">
-  <button type="button" class="image-link" data-modal-open data-id="{{.ID}}" data-image="{{.ImageURL}}" data-source="{{.URL}}" aria-label="预览生成图片">
+  <button type="button" class="image-link" data-modal-open data-id="{{.ID}}" data-image="{{.ImageURL}}" data-light-image="{{.LightImageURL}}" data-dark-image="{{.DarkImageURL}}" data-source="{{.URL}}" aria-label="预览生成图片">
     <img src="{{.ImageURL}}" alt="由 {{.URL}} 生成的 OG 卡片" loading="lazy">
   </button>
 </article>
@@ -112,7 +111,7 @@
   </div>
   <pre>{{.LogText}}</pre>
   {{if eq .Status "succeeded"}}
-    {{with .Item}}<button type="button" class="job-result" data-modal-open data-id="{{.ID}}" data-image="{{.ImageURL}}" data-source="{{.URL}}"><img src="{{.ImageURL}}" alt="新生成的 OG 卡片">点击预览与下载</button>{{end}}
+    {{with .Item}}<button type="button" class="job-result" data-modal-open data-id="{{.ID}}" data-image="{{.ImageURL}}" data-light-image="{{.LightImageURL}}" data-dark-image="{{.DarkImageURL}}" data-source="{{.URL}}"><img src="{{.ImageURL}}" alt="新生成的 OG 卡片">点击预览与下载</button>{{end}}
   {{end}}
 </section>
 {{end}}

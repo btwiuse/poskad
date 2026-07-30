@@ -18,13 +18,19 @@ func TestCardOOBPreservesCardWrapper(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	item := historyItem{ID: "019fad39-0000-7000-8000-000000000000", URL: "https://example.com", ImageURL: "/media/test/image.png"}
+	item := historyItem{
+		ID:            "019fad39-0000-7000-8000-000000000000",
+		URL:           "https://example.com",
+		ImageURL:      "/media/test/image.png",
+		LightImageURL: "/media/test/image.light.png",
+		DarkImageURL:  "/media/test/image.dark.png",
+	}
 	var output bytes.Buffer
 	if err := templates.ExecuteTemplate(&output, "card-oob", item); err != nil {
 		t.Fatal(err)
 	}
 	got := output.String()
-	if !strings.Contains(got, `hx-swap-oob="afterbegin:#gallery"`) || !strings.Contains(got, `class="card"`) {
+	if !strings.Contains(got, `hx-swap-oob="afterbegin:#gallery"`) || !strings.Contains(got, `class="card"`) || !strings.Contains(got, `data-light-image="/media/test/image.light.png"`) {
 		t.Fatalf("card-oob must insert a full card, got %q", got)
 	}
 }
@@ -83,17 +89,6 @@ func TestSharedSourceURL(t *testing.T) {
 				t.Fatalf("sharedSourceURL() = %q, want %q", got, test.want)
 			}
 		})
-	}
-}
-
-func TestCardTheme(t *testing.T) {
-	if got := cardTheme("light"); got != "light" {
-		t.Fatalf("cardTheme(light) = %q", got)
-	}
-	for _, value := range []string{"", "dark", "anything else"} {
-		if got := cardTheme(value); got != "dark" {
-			t.Fatalf("cardTheme(%q) = %q, want dark", value, got)
-		}
 	}
 }
 
@@ -174,5 +169,35 @@ func TestHistoryPageUsesTwelveNewestItems(t *testing.T) {
 	next := a.historyPage(page.Next)
 	if len(next.Items) != 1 {
 		t.Fatalf("got %d remaining items, want 1", len(next.Items))
+	}
+}
+
+func TestHistoryItemUsesThemeImagesWithLegacyFallback(t *testing.T) {
+	root := t.TempDir()
+	const id = "019fad39-0000-7000-8000-000000000000"
+	dir := filepath.Join(root, id)
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "image.png"), []byte("png"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "src.url"), []byte("https://example.com/post"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	a := &app{outputDir: root}
+	legacy, ok := a.historyItem(id)
+	if !ok || legacy.LightImageURL != legacy.ImageURL || legacy.DarkImageURL != legacy.ImageURL {
+		t.Fatalf("legacy history item = %#v, want both themes to use image.png", legacy)
+	}
+	for _, name := range []string{"image.light.png", "image.dark.png"} {
+		if err := os.WriteFile(filepath.Join(dir, name), []byte("png"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	item, ok := a.historyItem(id)
+	if !ok || item.LightImageURL != "/media/"+id+"/image.light.png" || item.DarkImageURL != "/media/"+id+"/image.dark.png" {
+		t.Fatalf("theme history item = %#v", item)
 	}
 }

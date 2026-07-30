@@ -10,7 +10,6 @@
   const nextButton = document.querySelector('[data-modal-next]');
   const gallery = document.querySelector('#gallery');
   const themeToggle = document.querySelector('#theme-toggle');
-  const themeInput = document.querySelector('#card-theme');
   let busy = false;
   let toastTimer;
   let currentOpener = null;
@@ -19,13 +18,30 @@
   function applyTheme(theme) {
     const isLight = theme === 'light';
     document.documentElement.dataset.theme = isLight ? 'light' : 'dark';
-    themeInput.value = isLight ? 'light' : 'dark';
     themeToggle.setAttribute('aria-pressed', String(isLight));
     themeToggle.setAttribute('aria-label', isLight ? '切换深色主题' : '切换浅色主题');
     themeToggle.innerHTML = isLight
       ? '<span aria-hidden="true">◐</span><span class="theme-toggle-label">Dark</span>'
       : '<span aria-hidden="true">☼</span><span class="theme-toggle-label">Light</span>';
     document.querySelector('meta[name="theme-color"]').content = isLight ? '#f7f9f9' : '#09090b';
+    document.querySelectorAll('[data-modal-open]').forEach((opener) => {
+      const image = imageForTheme(opener.dataset, theme);
+      opener.dataset.image = image;
+      const preview = opener.querySelector('img');
+      if (preview) preview.src = image;
+    });
+    if (currentOpener) {
+      setModalImage(imageForTheme(currentOpener.dataset, theme));
+    }
+  }
+
+  function imageForTheme(data, theme = document.documentElement.dataset.theme) {
+    return theme === 'light' ? (data.lightImage || data.image) : (data.darkImage || data.image);
+  }
+
+  function setModalImage(image) {
+    modalImage.src = image;
+    download.href = image;
   }
 
   const storedTheme = localStorage.getItem('poskad-theme');
@@ -107,10 +123,14 @@
       setBusy(false);
       notify('生成失败，请检查下方日志。');
     }
+    applyTheme(document.documentElement.dataset.theme);
     scheduleMasonry();
   });
 
-  document.body.addEventListener('htmx:oobAfterSwap', scheduleMasonry);
+  document.body.addEventListener('htmx:oobAfterSwap', () => {
+    applyTheme(document.documentElement.dataset.theme);
+    scheduleMasonry();
+  });
   document.body.addEventListener('htmx:afterSettle', scheduleMasonry);
   document.addEventListener('load', (event) => {
     if (event.target.matches?.('#gallery img')) scheduleMasonry();
@@ -157,8 +177,7 @@
 
   function openModal(opener, syncHash = true) {
     currentOpener = opener;
-    modalImage.src = opener.dataset.image;
-    download.href = opener.dataset.image;
+    setModalImage(imageForTheme(opener.dataset));
     source.href = opener.dataset.source;
     if (syncHash && opener.dataset.id) {
       history.replaceState(null, '', `${location.pathname}${location.search}#${opener.dataset.id}`);
@@ -236,7 +255,7 @@
       const response = await fetch(`/items/${id}`);
       if (!response.ok) return;
       const item = await response.json();
-      openModal({ dataset: { id: item.id, image: item.image_url, source: item.url } }, false);
+      openModal({ dataset: { id: item.id, image: item.image_url, lightImage: item.light_image_url, darkImage: item.dark_image_url, source: item.url } }, false);
     } catch (_) {
       notify('未找到该图片。');
     }

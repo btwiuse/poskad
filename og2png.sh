@@ -17,26 +17,26 @@ done
 # ── 参数 ──────────────────────────────────────────────────────────────────────
 usage() {
   cat <<EOF
-用法: $0 [--theme dark|light] <url> [output.png]
+用法: $0 [--theme light,dark] <url> [output.png]
 
 选项:
-  --theme THEME  卡片主题：dark（默认）或 light
+  --theme THEMES  逗号分隔的主题列表，默认 light,dark
 EOF
 }
 
-THEME="dark"
+THEME_LIST="light,dark"
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --theme)
       if [[ $# -lt 2 ]]; then
-        echo "error: --theme requires dark or light" >&2
+        echo "error: --theme requires at least one theme" >&2
         exit 1
       fi
-      THEME="${2:-}"
+      THEME_LIST="${2:-}"
       shift 2
       ;;
     --theme=*)
-      THEME="${1#*=}"
+      THEME_LIST="${1#*=}"
       shift
       ;;
     --help|-h)
@@ -56,11 +56,22 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-if [[ "$THEME" != "dark" && "$THEME" != "light" ]]; then
-  echo "error: --theme must be dark or light" >&2
+IFS=',' read -r -a requested_themes <<< "$THEME_LIST"
+THEMES=()
+for theme in "${requested_themes[@]}"; do
+  if [[ "$theme" != "dark" && "$theme" != "light" ]]; then
+    echo "error: --theme only accepts light and dark" >&2
+    exit 1
+  fi
+  if [[ " ${THEMES[*]} " != *" $theme "* ]]; then
+    THEMES+=("$theme")
+  fi
+done
+if [[ ${#THEMES[@]} -eq 0 ]]; then
+  echo "error: --theme requires at least one theme" >&2
   exit 1
 fi
-URL="${1:?用法: $0 [--theme dark|light] <url> [output.png]}"
+URL="${1:?用法: $0 [--theme light,dark] <url> [output.png]}"
 OUTPUT="${2:-output/og-card.png}"
 mkdir -p "$(dirname "$OUTPUT")"
  
@@ -234,7 +245,7 @@ cp "$TEMPLATE_DIR/og-card.typ" "$WORK_DIR/"
 cp "$TEMPLATE_DIR/verified.svg" "$WORK_DIR/assets/verified.svg"
  
 # ── 7. 构建 JSON 数据 ────────────────────────────────────────────────────────
-DATA=$(jq -n \
+BASE_DATA=$(jq -n \
   --arg title "$title" \
   --arg author "$author" \
   --arg handle "$handle" \
@@ -245,7 +256,6 @@ DATA=$(jq -n \
   --arg font_cjk "$font_cjk" \
   --arg font_math "$font_math" \
   --arg font_emoji "$font_emoji" \
-  --arg theme "$THEME" \
   --argjson verified "$verified" \
   --argjson avatar "$avatar_path" \
   --argjson post_image "$post_image_path" \
@@ -260,21 +270,37 @@ DATA=$(jq -n \
     font_cjk: $font_cjk,
     font_math: $font_math,
     font_emoji: $font_emoji,
-    theme: $theme,
     verified: $verified,
     avatar: $avatar,
     post_image: $post_image
   }'
 )
  
+output_base="${OUTPUT%.png}"
+if [[ "$output_base" == "$OUTPUT" ]]; then
+  echo "error: output filename must end in .png" >&2
+  exit 1
+fi
+
 echo "→ 编译 Typst 模板..."
-(cd "$WORK_DIR" && typst compile \
-  --input "data=$DATA" \
-  --format png \
-  og-card.typ \
-  output.png)
- 
-# ── 8. 输出 ──────────────────────────────────────────────────────────────────
-# Typst 会保留 Alpha 通道；导出的分享图使用不透明 RGB PNG，避免透明边缘。
-magick "$WORK_DIR/output.png" -alpha off "$OUTPUT"
-echo "✓ 已生成: $OUTPUT"
+for theme in "${THEMES[@]}"; do
+  data=$(jq --arg theme "$theme" '. + {theme: $theme}' <<< "$BASE_DATA")
+  theme_output="${output_base}.${theme}.png"
+  (cd "$WORK_DIR" && typst compile \
+    --input "data=$data" \
+    --format png \
+    og-card.typ \
+    "output-${theme}.png")
+  # Typst 会保留 Alpha 通道；导出的分享图使用不透明 RGB PNG，避免透明边缘。
+  magick "$WORK_DIR/output-${theme}.png" -alpha off "$theme_output"
+  echo "✓ 已生成: $theme_output"
+done
+
+# Legacy consumers still request image.png. Prefer the light result, which is
+# the default web theme; for a single-theme invocation, link to that result.
+legacy_theme="light"
+if [[ " ${THEMES[*]} " != *" light "* ]]; then
+  legacy_theme="${THEMES[0]}"
+fi
+ln -sfn "$(basename "${output_base}.${legacy_theme}.png")" "$OUTPUT"
+echo "✓ 已生成: $OUTPUT -> $(basename "${output_base}.${legacy_theme}.png")"

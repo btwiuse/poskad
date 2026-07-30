@@ -20,13 +20,15 @@ go run ./cmd/poskad
 
 ## 卡片主题
 
-`og2png.sh` 使用单一模板，并可通过 `--theme` 选择调色板；默认值是 `dark`：
+`og2png.sh` 使用单一模板，并可通过 `--theme` 选择一个或多个调色板；默认同时生成 `light,dark`：
 
 ```bash
-./og2png.sh --theme light https://x.com/example/status/123 output/card.png
+./og2png.sh --theme=light,dark https://x.com/example/status/123 output/card.png
 ```
 
-该参数暂未暴露在网页界面中，网页生成继续使用默认的深色主题。
+上述命令会生成 `output/card.light.png`、`output/card.dark.png`，并让
+`output/card.png` 指向浅色图以兼容现有调用方。网页生成同样始终生成两种主题，
+再依照当前页面主题显示对应图片。
 
 可选环境变量（也都可由同名语义的命令行参数覆盖）：
 
