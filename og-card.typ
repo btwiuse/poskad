@@ -133,7 +133,7 @@
           #image(data.post_image, width: 100%)
         ]
       }
-      v(8pt)
+      #v(8pt)
       // 页脚在内容下方正常流式排版：正文再长也不会与二维码重叠。
       #table(
         columns: (auto, 1fr),
