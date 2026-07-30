@@ -467,10 +467,10 @@ func cardTheme(raw string) string {
 	return "dark"
 }
 
-// sharedSourceURL accepts the explicit URL field first, then falls back to a
-// link embedded in the text or title fields used by the Web Share Target API.
+// sharedSourceURL accepts an existing share redirect first, then the explicit
+// Web Share Target URL field, and finally a link embedded in text or title.
 func sharedSourceURL(values url.Values) string {
-	for _, key := range []string{"url", "text", "title"} {
+	for _, key := range []string{"share", "url", "text", "title"} {
 		for _, value := range values[key] {
 			value = strings.TrimSpace(value)
 			if validSourceURL(value) {

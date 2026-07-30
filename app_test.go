@@ -63,6 +63,11 @@ func TestSharedSourceURL(t *testing.T) {
 			want:   "https://x.com/poskad/status/1",
 		},
 		{
+			name:   "share redirect URL",
+			values: url.Values{"share": {"https://x.com/poskad/status/0"}},
+			want:   "https://x.com/poskad/status/0",
+		},
+		{
 			name:   "URL inside shared text",
 			values: url.Values{"text": {"Read this: https://x.com/poskad/status/2。"}},
 			want:   "https://x.com/poskad/status/2",
