@@ -54,7 +54,7 @@ a { color: inherit; }
 .theme-toggle { align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; color: var(--text); display: inline-flex; gap: 7px; min-height: 36px; padding: 0 12px; position: absolute; right: 0; top: 28px; }
 .theme-toggle:hover { background: var(--surface-2); filter: none; }
 .theme-toggle span[aria-hidden="true"] { font-size: 1.1rem; line-height: 1; }
-h1 { font-size: clamp(2.6rem, 7vw, 5.7rem); line-height: .91; margin: 0; }
+h1 { align-items: center; display: flex; flex-direction: column; font-size: clamp(2.6rem, 7vw, 5.7rem); line-height: .91; margin: 0; }
 .headline-phrase { display: inline-block; white-space: nowrap; }
 .hero > p:last-child { color: var(--muted); margin: 24px auto 0; max-width: 470px; }
 .composer { background: color-mix(in srgb, var(--surface) 92%, transparent); border: 1px solid var(--line); border-radius: 18px; margin: 0 auto 18px; max-width: 960px; padding: 18px; box-shadow: 0 24px 80px #0006; }
