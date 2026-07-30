@@ -30,6 +30,11 @@
       const preview = opener.querySelector('img');
       if (preview) preview.src = image;
     });
+    document.querySelectorAll('.job-result[data-image]').forEach((result) => {
+      const image = imageForTheme(result.dataset, theme);
+      result.dataset.image = image;
+      result.querySelector('[data-job-download]').href = image;
+    });
     if (currentOpener) {
       setModalImage(imageForTheme(currentOpener.dataset, theme));
     }
@@ -160,6 +165,15 @@
     }
     if (event.target.closest('[data-share-image]')) {
       await shareCurrentImage();
+      return;
+    }
+    const jobResult = event.target.closest('.job-result');
+    if (event.target.closest('[data-job-share]') && jobResult) {
+      await shareImage(imageForTheme(jobResult.dataset));
+      return;
+    }
+    if (event.target.closest('[data-job-copy-source]') && jobResult) {
+      await copySourceURL(jobResult.dataset.source);
     }
   });
 
@@ -180,12 +194,16 @@
   }
 
   async function shareCurrentImage() {
+    await shareImage(modalImage.src);
+  }
+
+  async function shareImage(imageURL) {
     if (!navigator.share || !navigator.canShare) {
       notify('当前浏览器不支持分享图片。');
       return;
     }
     try {
-      const response = await fetch(modalImage.src);
+      const response = await fetch(imageURL);
       const blob = await response.blob();
       const file = new File([blob], 'poskad.png', { type: blob.type || 'image/png' });
       const shareData = { files: [file] };
@@ -196,6 +214,15 @@
       await navigator.share(shareData);
     } catch (error) {
       if (error?.name !== 'AbortError') notify('无法发起图片分享。');
+    }
+  }
+
+  async function copySourceURL(sourceURL) {
+    try {
+      await navigator.clipboard.writeText(sourceURL);
+      notify('原文链接已复制到剪贴板。');
+    } catch (_) {
+      notify('浏览器未授予剪贴板权限，无法复制原文链接。');
     }
   }
 
