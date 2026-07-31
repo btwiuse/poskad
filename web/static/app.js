@@ -26,9 +26,9 @@
       : '<span aria-hidden="true">☼</span><span class="theme-toggle-label">Light</span>';
     document.querySelector('meta[name="theme-color"]').content = isLight ? '#f7f9f9' : '#09090b';
     document.querySelectorAll('[data-modal-open]').forEach((opener) => {
-      const previewImage = previewImageForTheme(opener.dataset, theme);
+      const image = imageForTheme(opener.dataset, theme);
       const preview = opener.querySelector('img');
-      if (preview) preview.src = previewImage;
+      if (preview) preview.src = image;
     });
     document.querySelectorAll('.job-result[data-image]').forEach((result) => {
       const image = imageForTheme(result.dataset, theme);
@@ -36,10 +36,7 @@
       result.querySelector('[data-job-download]').href = image;
     });
     if (currentOpener) {
-      setModalImage(
-        previewImageForTheme(currentOpener.dataset, theme),
-        imageForTheme(currentOpener.dataset, theme),
-      );
+      setModalImage(imageForTheme(currentOpener.dataset, theme));
     }
   }
 
@@ -47,16 +44,9 @@
     return theme === 'light' ? (data.lightImage || data.image) : (data.darkImage || data.image);
   }
 
-  function previewImageForTheme(data, theme = document.documentElement.dataset.theme) {
-    if (theme === 'light') {
-      return data.lightPreviewImage || data.lightImage || data.previewImage || data.image;
-    }
-    return data.darkPreviewImage || data.darkImage || data.previewImage || data.image;
-  }
-
-  function setModalImage(previewImage, pngImage) {
-    modalImage.src = previewImage;
-    download.href = pngImage;
+  function setModalImage(image) {
+    modalImage.src = image;
+    download.href = image;
   }
 
   const storedTheme = localStorage.getItem('poskad-theme');
@@ -197,7 +187,7 @@
   });
 
   async function shareCurrentImage() {
-    await shareImage(download.href);
+    await shareImage(modalImage.src);
   }
 
   async function shareImage(imageURL) {
@@ -208,7 +198,7 @@
     try {
       const response = await fetch(imageURL);
       const blob = await response.blob();
-      const file = new File([blob], 'poskad.png', { type: blob.type || 'image/png' });
+      const file = new File([blob], 'poskad.webp', { type: blob.type || 'image/webp' });
       const shareData = { files: [file] };
       if (!navigator.canShare(shareData)) {
         notify('当前浏览器不支持分享图片。');
@@ -232,10 +222,7 @@
 
   function openModal(opener, syncHash = true) {
     currentOpener = opener;
-    setModalImage(
-      previewImageForTheme(opener.dataset),
-      imageForTheme(opener.dataset),
-    );
+    setModalImage(imageForTheme(opener.dataset));
     currentSourceURL = opener.dataset.source;
     openSource.href = currentSourceURL;
     if (syncHash && opener.dataset.id) {
@@ -320,9 +307,6 @@
         image: item.image_url,
         lightImage: item.light_image_url,
         darkImage: item.dark_image_url,
-        previewImage: item.preview_image_url,
-        lightPreviewImage: item.light_preview_image_url,
-        darkPreviewImage: item.dark_preview_image_url,
         source: item.url,
       } }, false);
     } catch (_) {

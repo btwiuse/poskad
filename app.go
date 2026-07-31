@@ -66,14 +66,11 @@ type job struct {
 }
 
 type historyItem struct {
-	ID                   string `json:"id"`
-	URL                  string `json:"url"`
-	ImageURL             string `json:"image_url"`
-	LightImageURL        string `json:"light_image_url"`
-	DarkImageURL         string `json:"dark_image_url"`
-	PreviewImageURL      string `json:"preview_image_url"`
-	LightPreviewImageURL string `json:"light_preview_image_url"`
-	DarkPreviewImageURL  string `json:"dark_preview_image_url"`
+	ID            string `json:"id"`
+	URL           string `json:"url"`
+	ImageURL      string `json:"image_url"`
+	LightImageURL string `json:"light_image_url"`
+	DarkImageURL  string `json:"dark_image_url"`
 }
 
 type historyPage struct {
@@ -303,8 +300,8 @@ func (a *app) runJob(j *job) {
 		return
 	}
 
-	imagePath := filepath.Join(dir, "image.png")
-	cmd := exec.Command(a.script, "--theme=light,dark", j.url, imagePath)
+	imagePath := filepath.Join(dir, "image.webp")
+	cmd := exec.Command(a.script, "--theme=light,dark", "--format=webp", j.url, imagePath)
 	cmd.Dir = a.workDir
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
@@ -331,12 +328,12 @@ func (a *app) runJob(j *job) {
 		j.fail(fmt.Sprintf("生成失败: %v", err))
 		return
 	}
-	if _, err := os.Stat(filepath.Join(dir, "image.light.png")); err != nil {
-		j.fail("生成器没有产出 image.light.png")
+	if _, err := os.Stat(filepath.Join(dir, "image.light.webp")); err != nil {
+		j.fail("生成器没有产出 image.light.webp")
 		return
 	}
-	if _, err := os.Stat(filepath.Join(dir, "image.dark.png")); err != nil {
-		j.fail("生成器没有产出 image.dark.png")
+	if _, err := os.Stat(filepath.Join(dir, "image.dark.webp")); err != nil {
+		j.fail("生成器没有产出 image.dark.webp")
 		return
 	}
 	j.succeed(a.outputHistoryItem(j.id, j.url))
@@ -395,8 +392,10 @@ func (a *app) historyPage(before string) historyPage {
 
 func (a *app) historyItem(id string) (historyItem, bool) {
 	dir := filepath.Join(a.outputDir, id)
-	if _, err := os.Stat(filepath.Join(dir, "image.png")); err != nil {
-		return historyItem{}, false
+	for _, name := range []string{"image.webp", "image.light.webp", "image.dark.webp"} {
+		if _, err := os.Stat(filepath.Join(dir, name)); err != nil {
+			return historyItem{}, false
+		}
 	}
 	rawURL, err := os.ReadFile(filepath.Join(dir, "src.url"))
 	if err != nil {
@@ -409,35 +408,15 @@ func (a *app) historyItem(id string) (historyItem, bool) {
 	return a.outputHistoryItem(id, itemURL), true
 }
 
-// outputHistoryItem keeps share/download files as PNG while using WebP previews
-// whenever the corresponding optional file exists. Older history records simply
-// fall back to their PNG files.
 func (a *app) outputHistoryItem(id, sourceURL string) historyItem {
 	mediaURL := "/media/" + id + "/"
-	dir := filepath.Join(a.outputDir, id)
-	item := historyItem{
+	return historyItem{
 		ID:            id,
 		URL:           sourceURL,
-		ImageURL:      mediaURL + "image.png",
-		LightImageURL: mediaURL + "image.png",
-		DarkImageURL:  mediaURL + "image.png",
+		ImageURL:      mediaURL + "image.webp",
+		LightImageURL: mediaURL + "image.light.webp",
+		DarkImageURL:  mediaURL + "image.dark.webp",
 	}
-	if _, err := os.Stat(filepath.Join(dir, "image.light.png")); err == nil {
-		item.LightImageURL = mediaURL + "image.light.png"
-	}
-	if _, err := os.Stat(filepath.Join(dir, "image.dark.png")); err == nil {
-		item.DarkImageURL = mediaURL + "image.dark.png"
-	}
-	item.PreviewImageURL = item.ImageURL
-	item.LightPreviewImageURL = item.LightImageURL
-	item.DarkPreviewImageURL = item.DarkImageURL
-	if _, err := os.Stat(filepath.Join(dir, "image.light.webp")); err == nil {
-		item.LightPreviewImageURL = mediaURL + "image.light.webp"
-	}
-	if _, err := os.Stat(filepath.Join(dir, "image.dark.webp")); err == nil {
-		item.DarkPreviewImageURL = mediaURL + "image.dark.webp"
-	}
-	return item
 }
 
 func (a *app) renderJob(w http.ResponseWriter, j *job) {
@@ -498,7 +477,7 @@ func validSourceURL(raw string) bool {
 }
 
 func validImageName(name string) bool {
-	return name == "image.png" || name == "image.light.png" || name == "image.dark.png" || name == "image.light.webp" || name == "image.dark.webp"
+	return name == "image.webp" || name == "image.light.webp" || name == "image.dark.webp"
 }
 
 // sharedSourceURL accepts an existing share redirect first, then the explicit

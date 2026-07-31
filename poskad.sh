@@ -17,14 +17,16 @@ done
 # ── 参数 ──────────────────────────────────────────────────────────────────────
 usage() {
   cat <<EOF
-用法: $0 [--theme light,dark] <url> [output.png]
+用法: $0 [--theme light,dark] [--format png,webp] <url> [output.webp]
 
 选项:
   --theme THEMES  逗号分隔的主题列表，默认 light,dark
+  --format FORMATS 逗号分隔的输出格式：png、webp，默认 webp
 EOF
 }
 
 THEME_LIST="light,dark"
+FORMAT_LIST="webp"
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --theme)
@@ -37,6 +39,18 @@ while [[ $# -gt 0 ]]; do
       ;;
     --theme=*)
       THEME_LIST="${1#*=}"
+      shift
+      ;;
+    --format)
+      if [[ $# -lt 2 ]]; then
+        echo "error: --format requires at least one format" >&2
+        exit 1
+      fi
+      FORMAT_LIST="${2:-}"
+      shift 2
+      ;;
+    --format=*)
+      FORMAT_LIST="${1#*=}"
       shift
       ;;
     --help|-h)
@@ -71,9 +85,41 @@ if [[ ${#THEMES[@]} -eq 0 ]]; then
   echo "error: --theme requires at least one theme" >&2
   exit 1
 fi
-URL="${1:?用法: $0 [--theme light,dark] <url> [output.png]}"
-OUTPUT="${2:-output/og-card.png}"
+IFS=',' read -r -a requested_formats <<< "$FORMAT_LIST"
+FORMATS=()
+for format in "${requested_formats[@]}"; do
+  if [[ "$format" != "png" && "$format" != "webp" ]]; then
+    echo "error: --format only accepts png and webp" >&2
+    exit 1
+  fi
+  if [[ " ${FORMATS[*]} " != *" $format "* ]]; then
+    FORMATS+=("$format")
+  fi
+done
+if [[ ${#FORMATS[@]} -eq 0 ]]; then
+  echo "error: --format requires at least one format" >&2
+  exit 1
+fi
+default_output_format="webp"
+if [[ " ${FORMATS[*]} " != *" webp "* ]]; then
+  default_output_format="${FORMATS[0]}"
+fi
+URL="${1:?用法: $0 [--theme light,dark] [--format png,webp] <url> [output.webp]}"
+OUTPUT="${2:-output/poskad.${default_output_format}}"
 mkdir -p "$(dirname "$OUTPUT")"
+
+# 生成器常由服务传入绝对输出路径。日志优先显示相对于工作目录的路径，避免
+# 暴露部署目录；若输出目录在工作目录外，则用 OUTDIR 作为简洁的占位前缀。
+display_output_path() {
+  local path="$1"
+  local working_dir
+  working_dir="$(pwd -P)"
+  if [[ "$path" == "$working_dir/"* ]]; then
+    printf '%s' "${path#"$working_dir/"}"
+  else
+    printf 'OUTDIR/%s' "$(basename "$path")"
+  fi
+}
  
 # ── 1. 抓取 OG 元数据 ────────────────────────────────────────────────────────
 echo "→ 抓取 OG 元数据: $URL"
@@ -440,39 +486,45 @@ BASE_DATA=$(jq -n \
   }'
 )
  
-output_base="${OUTPUT%.png}"
-if [[ "$output_base" == "$OUTPUT" ]]; then
-  echo "error: output filename must end in .png" >&2
+output_extension="${OUTPUT##*.}"
+output_base="${OUTPUT%.*}"
+if [[ "$output_base" == "$OUTPUT" || ( "$output_extension" != "png" && "$output_extension" != "webp" ) ]]; then
+  echo "error: output filename must end in .png or .webp" >&2
+  exit 1
+fi
+if [[ " ${FORMATS[*]} " != *" $output_extension "* ]]; then
+  echo "error: output extension .$output_extension is not enabled by --format=$FORMAT_LIST" >&2
   exit 1
 fi
 
 echo "→ 编译 Typst 模板..."
 for theme in "${THEMES[@]}"; do
   data=$(jq --arg theme "$theme" '. + {theme: $theme}' <<< "$BASE_DATA")
-  theme_output="${output_base}.${theme}.png"
   (cd "$WORK_DIR" && typst compile \
     --input "data=$data" \
     --format png \
     og-card.typ \
     "output-${theme}.png")
-  # Typst 会保留 Alpha 通道；导出的分享图使用不透明 RGB PNG，避免透明边缘。
-  magick "$WORK_DIR/output-${theme}.png" -alpha off "$theme_output"
-  echo "✓ 已生成: $theme_output"
-  # 网页预览使用无损 WebP，减少流量但不牺牲文字与二维码的清晰度。若运行环境
-  # 没有 WebP delegate，PNG 仍是完整且可用的回退产物。
-  theme_webp_output="${output_base}.${theme}.webp"
-  if magick "$theme_output" -define webp:lossless=true -quality 100 -define webp:method=6 "$theme_webp_output"; then
-    echo "✓ 已生成: $theme_webp_output"
-  else
-    echo "  ⚠ 无法生成 WebP 预览，网页将回退使用 PNG" >&2
-  fi
+  for format in "${FORMATS[@]}"; do
+    theme_output="${output_base}.${theme}.${format}"
+    case "$format" in
+      png)
+        # Typst 会保留 Alpha 通道；导出的 PNG 使用不透明 RGB，避免透明边缘。
+        magick "$WORK_DIR/output-${theme}.png" -alpha off "$theme_output"
+        ;;
+      webp)
+        # 无损 WebP 保留文字与二维码的清晰度，同时显著减少文件体积。
+        magick "$WORK_DIR/output-${theme}.png" -alpha off -define webp:lossless=true -quality 100 -define webp:method=6 "$theme_output"
+        ;;
+    esac
+    echo "✓ 已生成: $(display_output_path "$theme_output")"
+  done
 done
 
-# Legacy consumers still request image.png. Prefer the light result, which is
-# the default web theme; for a single-theme invocation, link to that result.
-legacy_theme="light"
+# 输出参数始终链接到浅色主题；若仅请求单一主题，则链接到该主题。
+default_theme="light"
 if [[ " ${THEMES[*]} " != *" light "* ]]; then
-  legacy_theme="${THEMES[0]}"
+  default_theme="${THEMES[0]}"
 fi
-ln -sfn "$(basename "${output_base}.${legacy_theme}.png")" "$OUTPUT"
-echo "✓ 已生成: $OUTPUT -> $(basename "${output_base}.${legacy_theme}.png")"
+ln -sfn "$(basename "${output_base}.${default_theme}.${output_extension}")" "$OUTPUT"
+echo "✓ 已生成: $(display_output_path "$OUTPUT") -> $(basename "${output_base}.${default_theme}.${output_extension}")"

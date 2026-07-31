@@ -4,9 +4,7 @@
 
 ```text
 output/<uuid-v7>/
-├── image.png
-├── image.light.png
-├── image.dark.png
+├── image.webp
 ├── image.light.webp
 ├── image.dark.webp
 └── src.url
@@ -24,15 +22,16 @@ go run ./cmd/poskad
 
 ## 卡片主题
 
-`poskad.sh` 使用单一模板，并可通过 `--theme` 选择一个或多个调色板；默认同时生成 `light,dark`：
+`poskad.sh` 使用单一模板，并可通过 `--theme` 选择一个或多个调色板，以及通过
+`--format` 选择输出格式；默认同时生成 `light,dark` 主题的 WebP：
 
 ```bash
-./poskad.sh --theme=light,dark https://x.com/example/status/123 output/card.png
+./poskad.sh --theme=light,dark --format=webp https://x.com/example/status/123 output/card.webp
 ```
 
-上述命令会生成 `output/card.light.png`、`output/card.dark.png` 及对应的无损
-WebP 预览图，并让 `output/card.png` 指向浅色 PNG 以兼容现有调用方。网页生成
-同样始终生成两种主题：页面预览优先使用 WebP，下载与系统分享始终使用 PNG。
+上述命令会生成无损的 `output/card.light.webp`、`output/card.dark.webp`，并让
+`output/card.webp` 指向浅色主题。若同时需要 PNG，可使用 `--format=png,webp`
+并将输出文件名设为对应格式。网页、下载和系统分享均使用 WebP。
 
 可选环境变量（也都可由同名语义的命令行参数覆盖）：
 
