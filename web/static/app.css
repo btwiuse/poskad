@@ -50,12 +50,20 @@ body { margin: 0; background: radial-gradient(70% 40% at 50% 0%, var(--hero-glow
 a { color: inherit; }
 .shell { position: relative; width: min(1180px, calc(100% - 32px)); margin: 0 auto; padding: 76px 0 96px; }
 .hero { max-width: 700px; margin: 0 auto 42px; text-align: center; }
-.wordmark { border-radius: 999px; color: var(--accent); display: inline-block; font-family: "STIX Two Math", "Cambria Math", serif; font-weight: 800; letter-spacing: 0; line-height: .86; white-space: nowrap; }
+.wordmark { border-radius: 999px; color: var(--accent); display: inline-block; font-family: "STIX Two Math", "Cambria Math", serif; font-size: 1.12em; font-weight: 800; letter-spacing: 0; line-height: 1; transform: translateY(.08em); white-space: nowrap; }
 .theme-toggle { align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; color: var(--text); display: inline-flex; gap: 7px; min-height: 36px; padding: 0 12px; position: absolute; right: 0; top: 28px; }
 .theme-toggle:hover { background: var(--surface-2); filter: none; }
 .theme-toggle span[aria-hidden="true"] { font-size: 1.1rem; line-height: 1; }
 h1 { align-items: center; display: flex; flex-direction: column; font-size: clamp(2.6rem, 7vw, 5.7rem); line-height: .91; margin: 0; }
 .headline-phrase { display: inline-block; white-space: nowrap; }
+.headline-tagline { align-items: center; display: inline-flex; gap: .13em; margin-top: .08em; }
+.headline-rotator { align-items: baseline; animation: position-phrase 20s cubic-bezier(.65, 0, .35, 1) infinite; display: inline-flex; gap: .25em; white-space: nowrap; will-change: transform; }
+.sr-only { height: 1px; margin: -1px; overflow: hidden; padding: 0; position: absolute; width: 1px; clip: rect(0, 0, 0, 0); white-space: nowrap; }
+.rotating-words { --rotating-row-height: 1.16em; display: block; height: var(--rotating-row-height); overflow: hidden; width: max-content; }
+.rotating-track { animation: rotate-words 20s cubic-bezier(.65, 0, .35, 1) infinite; display: flex; flex-direction: column; will-change: transform; }
+.rotating-track > span { flex: 0 0 var(--rotating-row-height); height: var(--rotating-row-height); line-height: var(--rotating-row-height); text-align: left; white-space: nowrap; }
+@keyframes rotate-words { 0%, 15% { transform: translateY(0); } 20%, 35% { transform: translateY(-1.16em); } 40%, 55% { transform: translateY(-2.32em); } 60%, 75% { transform: translateY(-3.48em); } 80%, 95% { transform: translateY(-4.64em); } 100% { transform: translateY(-5.8em); } }
+@keyframes position-phrase { 0%, 15%, 100% { transform: translateX(.4em); } 20%, 35% { transform: translateX(.18em); } 40%, 55% { transform: translateX(.3em); } 60%, 75% { transform: translateX(.2em); } 80%, 95% { transform: translateX(.25em); } }
 .hero > p:last-child { color: var(--muted); margin: 24px auto 0; max-width: 470px; }
 .composer { background: color-mix(in srgb, var(--surface) 92%, transparent); border: 1px solid var(--line); border-radius: 18px; margin: 0 auto 18px; max-width: 960px; padding: 18px; box-shadow: 0 24px 80px #0006; }
 label { display: block; color: var(--muted); font-size: .78rem; font-weight: 700; margin: 0 0 8px; }
@@ -112,3 +120,4 @@ h2 { font-size: 1.2rem; letter-spacing: -.02em; margin: 0; }
 @media (max-width: 800px) { .shell { padding-top: 70px; } .theme-toggle { right: 0; top: 20px; } }
 @media (max-width: 700px) { .gallery { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); } .modal-toolbar { flex-wrap: wrap; } .modal-nav { height: 44px; min-height: 44px; width: 44px; } .modal-nav.prev { left: 8px; } .modal-nav.next { right: 8px; } }
 @media (max-width: 520px) { .shell { width: min(100% - 20px, 1180px); } .url-row { flex-direction: column; } button { min-height: 46px; } .gallery { grid-template-columns: 1fr; } .job-actions { gap: 6px; padding: 10px; } .job-action { font-size: .74rem; padding: 0 6px; } .modal-toolbar { gap: 6px; padding: 10px; } .modal-action { font-size: .82rem; height: 38px; min-height: 38px; padding: 0 8px; } .modal-close { height: 36px; min-height: 36px; width: 36px; } .modal-image-wrap { min-height: 0; } }
+@media (prefers-reduced-motion: reduce) { .headline-rotator { animation: none; gap: .25em; } .rotating-words { display: inline; height: auto; overflow: visible; width: auto; } .rotating-track { animation: none; display: inline; } .rotating-track > span { display: none; height: auto; line-height: inherit; text-align: left; } .rotating-track > span:first-child { display: inline; } }
