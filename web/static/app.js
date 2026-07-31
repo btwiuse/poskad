@@ -130,6 +130,7 @@
 
   document.body.addEventListener('htmx:afterSwap', () => {
     const panel = document.querySelector('#job-panel');
+    scrollJobLogToLatest(panel);
     const status = panel?.dataset.jobStatus;
     if (status === 'succeeded') {
       setBusy(false);
@@ -141,6 +142,14 @@
     applyTheme(document.documentElement.dataset.theme);
     scheduleMasonry();
   });
+
+  function scrollJobLogToLatest(panel) {
+    const log = panel?.querySelector('pre');
+    if (!log) return;
+    requestAnimationFrame(() => {
+      log.scrollTop = log.scrollHeight;
+    });
+  }
 
   document.body.addEventListener('htmx:oobAfterSwap', () => {
     applyTheme(document.documentElement.dataset.theme);
