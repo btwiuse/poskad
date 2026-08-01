@@ -1,7 +1,7 @@
 @font-face {
   font-family: "Poskad Wordmark";
   font-style: normal;
-  font-weight: 800;
+  font-weight: 400;
   src: url("/static/poskad-wordmark.woff2") format("woff2");
   font-display: block;
 }
@@ -88,8 +88,10 @@ a {
   font-family: "Poskad Wordmark", serif;
   font-size: 1.12em;
   font-weight: 800;
+  font-synthesis: weight;
   letter-spacing: 0;
   line-height: 1;
+  -webkit-text-stroke: .012em currentColor;
   transform: translateY(.08em);
   white-space: nowrap;
 }
@@ -359,7 +361,7 @@ button:disabled {
 .job-actions {
   display: grid;
   gap: 8px;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   padding: 12px;
 }
 .job-action {
@@ -383,6 +385,26 @@ button:disabled {
 .job-action:hover {
   background: var(--modal-action-hover);
   filter: none;
+}
+.job-action-group {
+  display: inline-flex;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+}
+.job-action-group > .job-action {
+  min-width: 0;
+  border: 0;
+  border-radius: 0;
+}
+.job-action-group > .job-action:first-child {
+  flex: 1;
+}
+.job-action-group > .job-action + .job-action {
+  flex: 0 0 40px;
+  border-left: 1px solid var(--line);
+  padding: 0;
 }
 .history-heading {
   align-items: baseline;
@@ -517,6 +539,21 @@ h2 {
 }
 .modal-action:hover {
   background: var(--modal-action-hover);
+}
+.modal-action-group {
+  display: inline-flex;
+  overflow: hidden;
+  border: 1px solid var(--modal-action-border);
+  border-radius: 9px;
+}
+.modal-action-group > .modal-action {
+  border: 0;
+  border-radius: 0;
+}
+.modal-action-group > .modal-action + .modal-action {
+  border-left: 1px solid var(--modal-action-border);
+  min-width: 40px;
+  padding: 0 11px;
 }
 .modal-close {
   align-items: center;

@@ -265,6 +265,9 @@
     } else if (event.key === 'd') {
       event.preventDefault();
       download.click();
+    } else if (event.key === 's') {
+      event.preventDefault();
+      shareCurrentImage();
     } else if (event.key === 'o') {
       event.preventDefault();
       if (currentSourceURL) window.open(currentSourceURL, '_blank', 'noopener,noreferrer');
