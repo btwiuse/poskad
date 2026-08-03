@@ -99,15 +99,17 @@ a {
   align-items: center;
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 999px;
+  border-radius: 50%;
   color: var(--text);
   display: inline-flex;
-  gap: 7px;
+  height: 36px;
+  justify-content: center;
   min-height: 36px;
-  padding: 0 12px;
+  padding: 0;
   position: absolute;
   right: 0;
   top: 28px;
+  width: 36px;
 }
 .theme-toggle:hover {
   background: var(--surface-2);
@@ -556,6 +558,7 @@ h2 {
   min-width: 40px;
   padding: 0 11px;
 }
+.modal-theme-toggle,
 .modal-close {
   align-items: center;
   background: var(--modal-round);
@@ -567,11 +570,14 @@ h2 {
   height: 36px;
   justify-content: center;
   line-height: 1;
-  margin-left: auto;
   min-height: 36px;
   padding: 0;
   width: 36px;
 }
+.modal-theme-toggle {
+  margin-left: auto;
+}
+.modal-theme-toggle:hover,
 .modal-close:hover,
 .modal-nav:hover {
   background: var(--accent);
@@ -599,6 +605,7 @@ h2 {
   width: 52px;
   z-index: 3;
 }
+.modal-theme-toggle .ti,
 .modal-close .ti,
 .modal-nav .ti {
   display: block;

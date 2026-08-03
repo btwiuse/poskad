@@ -10,10 +10,12 @@
   const nextButton = document.querySelector('[data-modal-next]');
   const gallery = document.querySelector('#gallery');
   const themeToggle = document.querySelector('#theme-toggle');
+  const modalThemeToggle = document.querySelector('#modal-theme-toggle');
   let busy = false;
   let toastTimer;
   let currentOpener = null;
   let currentSourceURL = '';
+  let modalImageTheme = 'dark';
   const uuidV7Pattern = /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 
   function applyTheme(theme) {
@@ -22,8 +24,8 @@
     themeToggle.setAttribute('aria-pressed', String(isLight));
     themeToggle.setAttribute('aria-label', isLight ? '切换深色主题' : '切换浅色主题');
     themeToggle.innerHTML = isLight
-      ? '<i class="ti ti-circle-half" aria-hidden="true"></i><span class="theme-toggle-label">Dark</span>'
-      : '<i class="ti ti-sun" aria-hidden="true"></i><span class="theme-toggle-label">Light</span>';
+      ? '<i class="ti ti-moon" aria-hidden="true"></i>'
+      : '<i class="ti ti-sun" aria-hidden="true"></i>';
     document.querySelector('meta[name="theme-color"]').content = isLight ? '#f7f9f9' : '#09090b';
     document.querySelectorAll('[data-modal-open]').forEach((opener) => {
       const image = imageForTheme(opener.dataset, theme);
@@ -36,7 +38,7 @@
       result.querySelector('[data-job-download]').href = image;
     });
     if (currentOpener) {
-      setModalImage(imageForTheme(currentOpener.dataset, theme));
+      setModalImage(imageForTheme(currentOpener.dataset, modalImageTheme));
     }
   }
 
@@ -49,14 +51,29 @@
     download.href = image;
   }
 
+  function setModalImageTheme(theme) {
+    modalImageTheme = theme === 'light' ? 'light' : 'dark';
+    const isLight = modalImageTheme === 'light';
+    modalThemeToggle.setAttribute('aria-pressed', String(isLight));
+    modalThemeToggle.setAttribute('aria-label', isLight ? '切换为深色图片' : '切换为浅色图片');
+    modalThemeToggle.innerHTML = isLight
+      ? '<i class="ti ti-moon" aria-hidden="true"></i>'
+      : '<i class="ti ti-sun" aria-hidden="true"></i>';
+    if (currentOpener) setModalImage(imageForTheme(currentOpener.dataset, modalImageTheme));
+  }
+
   const storedTheme = localStorage.getItem('poskad-theme');
   applyTheme(storedTheme === 'light' || storedTheme === 'dark'
     ? storedTheme
     : (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'));
-  themeToggle.addEventListener('click', () => {
+  function toggleTheme() {
     const theme = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
     localStorage.setItem('poskad-theme', theme);
     applyTheme(theme);
+  }
+  themeToggle.addEventListener('click', toggleTheme);
+  modalThemeToggle.addEventListener('click', () => {
+    setModalImageTheme(modalImageTheme === 'light' ? 'dark' : 'light');
   });
 
   function notify(message) {
@@ -222,7 +239,7 @@
 
   function openModal(opener, syncHash = true) {
     currentOpener = opener;
-    setModalImage(imageForTheme(opener.dataset));
+    setModalImageTheme(document.documentElement.dataset.theme);
     currentSourceURL = opener.dataset.source;
     openSource.href = currentSourceURL;
     if (syncHash && opener.dataset.id) {
