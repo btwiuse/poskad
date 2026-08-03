@@ -22,8 +22,8 @@
     themeToggle.setAttribute('aria-pressed', String(isLight));
     themeToggle.setAttribute('aria-label', isLight ? '切换深色主题' : '切换浅色主题');
     themeToggle.innerHTML = isLight
-      ? '<span aria-hidden="true">◐</span><span class="theme-toggle-label">Dark</span>'
-      : '<span aria-hidden="true">☼</span><span class="theme-toggle-label">Light</span>';
+      ? '<i class="ti ti-circle-half" aria-hidden="true"></i><span class="theme-toggle-label">Dark</span>'
+      : '<i class="ti ti-sun" aria-hidden="true"></i><span class="theme-toggle-label">Light</span>';
     document.querySelector('meta[name="theme-color"]').content = isLight ? '#f7f9f9' : '#09090b';
     document.querySelectorAll('[data-modal-open]').forEach((opener) => {
       const image = imageForTheme(opener.dataset, theme);
@@ -79,7 +79,7 @@
   function setBusy(next) {
     busy = next;
     button.disabled = next;
-    button.innerHTML = next ? '正在生成…' : '生成图片 <span aria-hidden="true">↗</span>';
+    button.innerHTML = next ? '正在生成…' : '生成图片 <i class="ti ti-arrow-up-right" aria-hidden="true"></i>';
   }
 
   form.addEventListener('keydown', (event) => {

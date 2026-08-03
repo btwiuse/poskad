@@ -113,7 +113,7 @@ a {
   background: var(--surface-2);
   filter: none;
 }
-.theme-toggle span[aria-hidden="true"] {
+.theme-toggle .ti {
   font-size: 1.1rem;
   line-height: 1;
 }
@@ -373,12 +373,13 @@ button:disabled {
   cursor: pointer;
   display: inline-flex;
   font: inherit;
-  font-size: .86rem;
   font-weight: 750;
-  gap: 6px;
+  gap: 7px;
+  height: 40px;
   justify-content: center;
+  line-height: 1;
   min-height: 40px;
-  padding: 0 10px;
+  padding: 0 12px;
   text-align: center;
   text-decoration: none;
 }
@@ -598,16 +599,11 @@ h2 {
   width: 52px;
   z-index: 3;
 }
-.modal-close svg,
-.modal-nav svg {
+.modal-close .ti,
+.modal-nav .ti {
   display: block;
-  height: 25px;
-  overflow: visible;
-  stroke: currentColor;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 2.5;
-  width: 25px;
+  font-size: 25px;
+  line-height: 1;
 }
 .modal-nav:disabled {
   opacity: .35;
@@ -681,8 +677,10 @@ h2 {
     padding: 10px;
   }
   .job-action {
-    font-size: .74rem;
-    padding: 0 6px;
+    font-size: .82rem;
+    height: 38px;
+    min-height: 38px;
+    padding: 0 8px;
   }
   .modal-toolbar {
     gap: 6px;
