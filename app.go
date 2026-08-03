@@ -174,19 +174,21 @@ func (a *app) handleIndex(w http.ResponseWriter, r *http.Request) {
 // Redirecting to the homepage keeps the resulting card in the normal UI while
 // preserving the shared link long enough for the browser to submit it.
 func (a *app) handleShare(w http.ResponseWriter, r *http.Request) {
-	if r.Method == http.MethodGet {
-		http.Redirect(w, r, "/", http.StatusSeeOther)
-		return
-	}
-	if r.Method != http.MethodPost {
+	var values url.Values
+	switch r.Method {
+	case http.MethodGet:
+		values = r.URL.Query()
+	case http.MethodPost:
+		if err := r.ParseMultipartForm(10 << 20); err != nil {
+			http.Error(w, "invalid share target request", http.StatusBadRequest)
+			return
+		}
+		values = r.Form
+	default:
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	if err := r.ParseMultipartForm(10 << 20); err != nil {
-		http.Error(w, "invalid share target request", http.StatusBadRequest)
-		return
-	}
-	sharedURL := sharedSourceURL(r.Form)
+	sharedURL := sharedSourceURL(values)
 	if !validSourceURL(sharedURL) {
 		http.Error(w, "share did not include a valid http:// or https:// link", http.StatusBadRequest)
 		return

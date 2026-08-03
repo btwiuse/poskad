@@ -116,6 +116,20 @@ func TestShareTargetRedirectsToSharedURL(t *testing.T) {
 	}
 }
 
+func TestShareTargetQueryRedirectsToSharedURL(t *testing.T) {
+	a := &app{}
+	req := httptest.NewRequest(http.MethodGet, "/share?text=Read+this%3A+https%3A%2F%2Fx.com%2Fposkad%2Fstatus%2F5", nil)
+	response := httptest.NewRecorder()
+	a.handleShare(response, req)
+
+	if got, want := response.Code, http.StatusSeeOther; got != want {
+		t.Fatalf("status = %d, want %d", got, want)
+	}
+	if got, want := response.Header().Get("Location"), "/?share=https%3A%2F%2Fx.com%2Fposkad%2Fstatus%2F5"; got != want {
+		t.Fatalf("redirect = %q, want %q", got, want)
+	}
+}
+
 func TestCommandFlagsOverrideEnvironment(t *testing.T) {
 	t.Setenv("PORT", "8080")
 	cmd := NewCommand()
