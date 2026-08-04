@@ -4,10 +4,10 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="将网页与 X 原文生成可分享的 OG 图片卡片">
+    <meta name="description" content="粘贴推文链接，即刻生成精美预览卡片，无需登录">
     <meta name="theme-color" content="#09090b">
     <meta property="og:title" content="Poskad">
-    <meta property="og:description" content="为 𝕏 推文生成精美预览卡片">
+    <meta property="og:description" content="粘贴推文链接，即刻生成精美预览卡片，无需登录">
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="Poskad">
     <meta property="og:url" content="{{.SiteURL}}">
@@ -17,7 +17,7 @@
     <meta property="og:image:height" content="630">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Poskad">
-    <meta name="twitter:description" content="为 𝕏 推文生成精美预览卡片">
+    <meta name="twitter:description" content="粘贴推文链接，即刻生成精美预览卡片，无需登录">
     <meta name="twitter:image" content="{{.SiteURL}}/static/og-image.png">
     <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
     <link rel="icon" href="/static/favicon-32.png" sizes="32x32" type="image/png">
@@ -36,15 +36,15 @@
       </button>
       <header class="hero">
         <h1><span class="headline-rotator"><span class="headline-every">Every</span><span class="rotating-words" aria-hidden="true"><span class="rotating-track"><span>𝕏 Post</span><span>𝕏 Profile</span><span>𝕏 Space</span><span>𝕏 Article</span><span>𝕏 Banger</span><span>𝕏 Post</span></span></span><span class="sr-only">𝕏 Post</span></span><span class="headline-phrase headline-tagline"><span>Deserves a</span><span class="wordmark">ℙ𝕠𝕤𝕜𝕒𝕕</span></span></h1>
-        <p>粘贴推文链接，即刻生成精美预览图，无需登录</p>
+        <p>粘贴推文链接，即刻生成精美预览卡片，无需登录</p>
       </header>
 
-      <section class="composer" aria-label="生成图片">
+      <section class="composer" aria-label="生成卡片">
         <form id="generator-form" hx-post="/generate" hx-target="#job-panel" hx-swap="outerHTML">
           <label for="url">原文链接</label>
           <div class="url-row">
-            <input id="url" name="url" type="url" placeholder="https://x.com/..." autocomplete="url" value="{{.ShareURL}}" {{if .ShareURL}}data-share-url="{{.ShareURL}}"{{end}} required>
-            <button id="generate-button" type="submit">生成图片 <i class="ti ti-arrow-up-right" aria-hidden="true"></i></button>
+            <input id="url" name="url" type="url" placeholder="https://x.com/..." autocomplete="url" value="{{.ShareURL}}" {{if .ShareURL}}data-share-url="{{.ShareURL}}"{{ end }} required>
+            <button id="generate-button" type="submit">生成卡片 <i class="ti ti-arrow-up-right" aria-hidden="true"></i></button>
           </div>
         </form>
         <p class="hint">图片与原始链接会公开保存在生成历史中。</p>
@@ -62,7 +62,7 @@
         </div>
       </section>
     </main>
-    <dialog id="image-modal" class="image-modal" aria-label="图片预览">
+    <dialog id="image-modal" class="image-modal" aria-label="卡片预览">
       <div class="modal-layout">
         <div class="modal-toolbar">
           <div class="modal-action-group" role="group" aria-label="图片操作">
@@ -84,16 +84,16 @@
     <div id="toast" class="toast" popover="manual" role="status" aria-live="polite"></div>
   </body>
 </html>
-{{end}}
+{{ end }}
 
 {{define "history"}}
-  {{range .Items}}{{template "card" .}}{{end}}
+  {{ range.Items }}{{template "card" .}}{{ end }}
   {{if .Next}}
   <div class="history-sentinel" hx-get="/history?before={{.Next}}" hx-trigger="intersect once" hx-swap="outerHTML">
     正在加载更多图片…
   </div>
-  {{end}}
-{{end}}
+  {{ end }}
+{{ end }}
 
 {{define "card"}}
 <article class="card" id="card-{{.ID}}">
@@ -101,23 +101,94 @@
     <img src="{{.LightImageURL}}" alt="由 {{.URL}} 生成的 OG 卡片" loading="lazy">
   </button>
 </article>
-{{end}}
+{{ end }}
 
 {{define "card-oob"}}
 <div hx-swap-oob="afterbegin:#gallery">
   {{template "card" .}}
 </div>
-{{end}}
+{{ end }}
 
 {{define "job"}}
-<section id="job-panel" class="job-panel {{.Status}}" data-job-status="{{.Status}}" {{with .Item}}data-item-id="{{.ID}}"{{end}} {{if or (eq .Status "queued") (eq .Status "running")}}hx-get="/jobs/{{.ID}}" hx-trigger="every 750ms" hx-swap="outerHTML"{{end}}>
+{{ $isPending := or (eq .Status "queued") (eq .Status "running") }}
+<section
+  id="job-panel"
+  class="job-panel {{.Status}}"
+  data-job-status="{{.Status}}"
+  {{with .Item}}data-item-id="{{.ID}}"{{end}}
+  {{if $isPending}}hx-get="/jobs/{{.ID}}" hx-trigger="every 750ms" hx-swap="outerHTML"{{end}}
+>
   <div class="job-heading">
-    <span>{{if eq .Status "queued"}}排队中{{else if eq .Status "running"}}正在生成{{else if eq .Status "succeeded"}}生成完成{{else}}生成失败{{end}}</span>
-    {{if or (eq .Status "queued") (eq .Status "running")}}<span class="spinner" aria-label="处理中"></span>{{end}}
+    <span>
+      {{if eq .Status "queued"}}排队中
+      {{else if eq .Status "running"}}正在生成
+      {{else if eq .Status "succeeded"}}生成完成
+      {{else}}生成失败
+      {{end}}
+    </span>
+    {{if $isPending}}<span class="spinner" aria-label="处理中"></span>{{end}}
   </div>
+
   {{if ne .Status "succeeded"}}<pre>{{.LogText}}</pre>{{end}}
+
   {{if eq .Status "succeeded"}}
-    {{with .Item}}<div class="job-result" data-image="{{.ImageURL}}" data-light-image="{{.LightImageURL}}" data-dark-image="{{.DarkImageURL}}" data-source="{{.URL}}"><button type="button" class="job-preview" data-modal-open data-id="{{.ID}}" data-image="{{.ImageURL}}" data-light-image="{{.LightImageURL}}" data-dark-image="{{.DarkImageURL}}" data-source="{{.URL}}" aria-label="预览新生成的图片"><img src="{{.LightImageURL}}" alt="新生成的 OG 卡片"></button><div class="job-actions"><div class="job-action-group" role="group" aria-label="图片操作"><button type="button" class="job-action" data-job-share><i class="ti ti-share-2" aria-hidden="true"></i> 分享图片</button><a class="job-action" data-job-download aria-label="下载 WebP" title="下载 WebP" download href="{{.LightImageURL}}"><i class="ti ti-download" aria-hidden="true"></i></a></div><div class="job-action-group" role="group" aria-label="原文链接"><button type="button" class="job-action" data-job-copy-source><i class="ti ti-copy" aria-hidden="true"></i> 原文链接</button><a class="job-action" aria-label="在新标签页打开原文" title="在新标签页打开原文" href="{{.URL}}" target="_blank" rel="noopener noreferrer"><i class="ti ti-arrow-up-right" aria-hidden="true"></i></a></div></div></div>{{end}}
+    {{with .Item}}
+    <div
+      class="job-result"
+      data-image="{{.ImageURL}}"
+      data-light-image="{{.LightImageURL}}"
+      data-dark-image="{{.DarkImageURL}}"
+      data-source="{{.URL}}"
+    >
+      <button
+        type="button"
+        class="job-preview"
+        data-modal-open
+        data-id="{{.ID}}"
+        data-image="{{.ImageURL}}"
+        data-light-image="{{.LightImageURL}}"
+        data-dark-image="{{.DarkImageURL}}"
+        data-source="{{.URL}}"
+        aria-label="预览新生成的图片"
+      >
+        <img src="{{.LightImageURL}}" alt="新生成的 OG 卡片">
+      </button>
+
+      <div class="job-actions">
+        <div class="job-action-group" role="group" aria-label="图片操作">
+          <button type="button" class="job-action" data-job-share>
+            <i class="ti ti-share-2" aria-hidden="true"></i> 分享图片
+          </button>
+          <a
+            class="job-action"
+            data-job-download
+            aria-label="下载 WebP"
+            title="下载 WebP"
+            download
+            href="{{.LightImageURL}}"
+          >
+            <i class="ti ti-download" aria-hidden="true"></i>
+          </a>
+        </div>
+
+        <div class="job-action-group" role="group" aria-label="原文链接">
+          <button type="button" class="job-action" data-job-copy-source>
+            <i class="ti ti-copy" aria-hidden="true"></i> 原文链接
+          </button>
+          <a
+            class="job-action"
+            aria-label="在新标签页打开原文"
+            title="在新标签页打开原文"
+            href="{{.URL}}"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <i class="ti ti-arrow-up-right" aria-hidden="true"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+    {{end}}
   {{end}}
 </section>
 {{end}}
