@@ -278,14 +278,21 @@ download_as_png() {
   local download="$WORK_DIR/assets/${name}.download"
   local headers="$WORK_DIR/assets/${name}.headers"
   local output="$WORK_DIR/assets/${name}.png"
-  local content_type extension
+  local content_type=""
+  local extension=""
+  local url_path
 
   echo "→ 下载${label}: $url"
+  rm -f "$download" "$headers"
   if curl -sfL --max-time "$timeout" -D "$headers" -o "$download" "$url"; then
+    if [ ! -s "$download" ]; then
+      echo "  ⚠ ${label}响应为空，跳过"
+      return 1
+    fi
+
     # ImageMagick 在某些平台无法仅凭内容识别 ICO。按照最终响应的 MIME 类型
     # 补上后缀，也让没有文件扩展名的 SVG/WebP favicon 可以正确解码。
     content_type=$(awk -F ': *' 'tolower($1) == "content-type" { value=tolower($2) } END { sub(/;.*/, "", value); gsub(/\r/, "", value); print value }' "$headers")
-    extension=""
     case "$content_type" in
       image/x-icon|image/vnd.microsoft.icon) extension=".ico" ;;
       image/svg+xml) extension=".svg" ;;
@@ -295,6 +302,23 @@ download_as_png() {
       image/jpeg) extension=".jpg" ;;
       image/gif) extension=".gif" ;;
     esac
+
+    # 一些静态站点把 favicon 标成 application/octet-stream 或不返回
+    # Content-Type；这种情况下仍可从 URL 路径的常见扩展名判断格式。
+    if [ -z "$extension" ]; then
+      url_path="${url%%\?*}"
+      url_path="${url_path%%\#*}"
+      case "$url_path" in
+        *.ico|*.ICO) extension=".ico" ;;
+        *.svg|*.SVG) extension=".svg" ;;
+        *.webp|*.WEBP) extension=".webp" ;;
+        *.avif|*.AVIF) extension=".avif" ;;
+        *.png|*.PNG) extension=".png" ;;
+        *.jpg|*.JPG|*.jpeg|*.JPEG) extension=".jpg" ;;
+        *.gif|*.GIF) extension=".gif" ;;
+      esac
+    fi
+
     if [ -n "$extension" ]; then
       mv "$download" "${download}${extension}"
       download="${download}${extension}"
